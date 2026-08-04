@@ -72,7 +72,7 @@ No destructive migration is planned. Existing incident, run, tool, evidence, ret
 - [x] Expand the golden evaluation corpus and dashboard to three measured cases.
 - [x] Retain existing tests and add requested unit, integration, security, and UI coverage.
 - [x] Update CI and documentation without overstating the 30-case roadmap.
-- [ ] Push and publish the fully verified milestone.
+- [x] Push and publish the fully verified milestone.
 
 ## Risks and assumptions
 
