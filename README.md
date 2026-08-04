@@ -4,6 +4,12 @@
 
 Murex FDE Workbench is a portfolio application showing how a Forward Deployed Engineer studies, redesigns, deploys, evaluates, and justifies an AI-assisted reporting-exception workflow at fictional **HarbourView Bank**. It is deliberately not a chatbot. The core product is a controlled case workflow in which deterministic services gather facts, retrieval supplies approved guidance, bounded AI synthesises cited recommendations, and an accountable analyst approves or rejects the next action.
 
+## Live demonstration
+
+**[Open the Murex FDE Workbench →](https://murex-fde-workbench.thekhoza.chatgpt.site)**
+
+No setup, credentials, or model API key is required to inspect the hosted synthetic demonstration. For a concise reviewer journey, open **Demo launcher**, launch **Stale FX market data**, run the controlled investigation, inspect its evidence citations, and record an approval decision. Then launch **Conflicting timeout diagnosis** to see the system fail closed.
+
 ## What the project demonstrates
 
 - Discovery of the real reporting process, including stakeholder conflicts and operating incentives
@@ -91,4 +97,3 @@ Murex is a trademark of its respective owner. This project is not affiliated wit
 ## Licence
 
 MIT — see `LICENSE`.
-

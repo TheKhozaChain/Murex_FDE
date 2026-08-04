@@ -22,6 +22,7 @@ main { min-width:0; display:flex; flex-direction:column; min-height:100vh; }
 .topbar { height:58px; background:#fff; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 32px; position:sticky; top:0; z-index:5; }
 .breadcrumb { display:flex; gap:10px; font-size:12px; } .breadcrumb span { color:var(--muted); } .breadcrumb b { color:#b1bcbe; } .breadcrumb strong { color:#26363b; }
 .top-actions { display:flex; align-items:center; gap:8px; } .top-actions>button { border:0; background:transparent; font-size:20px; position:relative; color:#64767b; } .top-actions>button i { position:absolute; width:6px; height:6px; background:#b36324; border-radius:50%; right:2px; top:2px; }
+.source-link { color:var(--teal); text-decoration:none; font-size:11px; font-weight:800; padding:7px 10px; border-right:1px solid var(--line); margin-right:2px; }.source-link:hover { text-decoration:underline; }
 .top-actions select { border:1px solid var(--line); background:#fff; padding:7px 25px 7px 10px; color:#314247; font-size:12px; } .user { width:30px; height:30px; display:grid; place-items:center; background:#d8eae7; color:#125e58; border-radius:50%; font-weight:800; font-size:11px; }
 .page { padding:30px 34px 50px; width:100%; max-width:1520px; margin:0 auto; flex:1; }
 .page-head { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; margin-bottom:25px; }
