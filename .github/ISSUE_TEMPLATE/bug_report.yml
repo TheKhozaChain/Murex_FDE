@@ -1,0 +1,22 @@
+name: Bug report
+description: Report a reproducible problem in the educational simulation
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Data safety
+      options:
+        - label: This report contains no real client data, credentials, or proprietary vendor material.
+          required: true
