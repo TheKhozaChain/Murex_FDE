@@ -5,7 +5,7 @@
 - **Enterprise AI:** separates deterministic facts from probabilistic synthesis and makes every claim inspectable.
 - **Workflow analysis:** records conflicts, bottlenecks, materiality, ownership, and incentives—not only technical symptoms.
 - **Human in the loop:** analysts own confirmation, escalation, reruns, resolution, severity, and publication.
-- **Evaluation:** golden cases test quality and prohibited behavior; safety gates are stricter than average quality metrics.
-- **Governance:** threat model, trust metadata, schema validation, redaction, rate/step/cost limits, and fail-closed states.
+- **Evaluation:** one golden case now executes the production workflow and measures ten case-level checks; the 30-case suite is honestly roadmap.
+- **Governance:** tested trust ranking, runtime schemas, citation/fact validation, immutable audit access, protected-record rules, explicit approval, and fail-closed states.
+- **Engineering progression:** the first release was intentionally a client simulation; Milestone 2 demonstrates extracting one narrow scenario into typed, persisted server-side layers before scaling breadth.
 - **Business value:** conservative assumptions, explicit realisation factor, confidence range, and no claim that released capacity automatically becomes cash savings.
-

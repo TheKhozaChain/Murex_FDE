@@ -2,7 +2,7 @@
 
 | Threat | Control |
 |---|---|
-| Prompt injection or malicious runbook content | Treat documents as quoted data, strip instructions, trust metadata, closed tools, cite sources |
+| Prompt injection or malicious runbook content | Weighted local retrieval penalises instruction-like content; only approved/trusted citations validate; documents are data, never instructions |
 | Data leakage | Synthetic data by default, redaction before providers/logs, no secrets in prompts or traces |
 | Hallucinated root causes | Closed evidence set, citation validator, confidence threshold, analyst confirmation |
 | Excessive agent autonomy | Explicit state machine, maximum steps, timeouts, retries, absent mutation tools |
@@ -12,5 +12,4 @@
 | Cost overruns | Per-run token/cost budgets, rate limits, maximum steps, observability |
 | Incomplete audit trails | Idempotent workflow IDs, append-only events, schema validation before transition |
 
-Residual risk remains because synthetic evaluation cannot establish production safety, business processes may differ from interviews, and provider behavior can change. A real deployment requires bank security review, model risk governance, privacy assessment, operational resilience testing, and controlled shadow-mode evidence.
-
+Automated adversarial tests cover fabricated citations, direct market-data mutation, malformed output, early/duplicate approval, injected retrieval content, and consumer attempts to mutate loaded audit events. Residual risk remains because the public demo uses shared D1 state and a labelled demo identity rather than authentication; synthetic evaluation cannot establish production safety; and a future external provider may behave differently. A real deployment requires authenticated tenant isolation, bank security review, model-risk governance, privacy assessment, regulated retention, operational-resilience testing, and controlled shadow-mode evidence.

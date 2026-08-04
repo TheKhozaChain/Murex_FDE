@@ -1,4 +1,15 @@
-// Intentionally empty by default.
-// Add Drizzle tables here when the site actually needs a database.
-// See examples/d1/db/schema.ts for an opt-in example.
-export {};
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+
+export const incidents = sqliteTable("incidents", { id: text("id").primaryKey(), payloadJson: text("payload_json").notNull(), seededAt: text("seeded_at").notNull() });
+export const investigationRuns = sqliteTable("investigation_runs", {
+  id: text("id").primaryKey(), incidentId: text("incident_id").notNull(), status: text("status").notNull(), provider: text("provider").notNull(), startedAt: text("started_at").notNull(), completedAt: text("completed_at"), snapshotJson: text("snapshot_json").notNull(),
+}, table => [index("idx_investigation_runs_incident_started").on(table.incidentId, table.startedAt)]);
+export const toolExecutions = sqliteTable("tool_executions", { id: text("id").primaryKey(), investigationId: text("investigation_id").notNull(), toolName: text("tool_name").notNull(), status: text("status").notNull(), payloadJson: text("payload_json").notNull() }, table => [index("idx_tool_executions_run").on(table.investigationId)]);
+export const evidenceRecords = sqliteTable("evidence_records", { id: text("id").notNull(), investigationId: text("investigation_id").notNull(), kind: text("kind").notNull(), payloadJson: text("payload_json").notNull() }, table => [uniqueIndex("uq_evidence_run_id").on(table.investigationId, table.id)]);
+export const retrievedDocuments = sqliteTable("retrieved_documents", { documentId: text("document_id").notNull(), investigationId: text("investigation_id").notNull(), trust: text("trust").notNull(), relevanceScore: integer("relevance_score").notNull(), payloadJson: text("payload_json").notNull() }, table => [uniqueIndex("uq_retrieved_run_document").on(table.investigationId, table.documentId)]);
+export const recommendations = sqliteTable("recommendations", { investigationId: text("investigation_id").primaryKey(), version: integer("version").notNull(), outcome: text("outcome").notNull(), payloadJson: text("payload_json").notNull(), citationJson: text("citation_json").notNull() });
+export const policyDecisions = sqliteTable("policy_decisions", { investigationId: text("investigation_id").primaryKey(), result: text("result").notNull(), passed: integer("passed", { mode: "boolean" }).notNull(), payloadJson: text("payload_json").notNull() });
+export const approvalDecisions = sqliteTable("approval_decisions", { id: text("id").primaryKey(), investigationId: text("investigation_id").notNull(), decision: text("decision").notNull(), identity: text("identity").notNull(), decidedAt: text("decided_at").notNull(), payloadJson: text("payload_json").notNull() }, table => [uniqueIndex("uq_approval_run").on(table.investigationId)]);
+export const auditEvents = sqliteTable("audit_events", { id: text("id").primaryKey(), investigationId: text("investigation_id").notNull(), sequence: integer("sequence").notNull(), eventType: text("event_type").notNull(), occurredAt: text("occurred_at").notNull(), payloadJson: text("payload_json").notNull() }, table => [uniqueIndex("uq_audit_run_sequence").on(table.investigationId, table.sequence), index("idx_audit_run").on(table.investigationId)]);
+export const evaluationCases = sqliteTable("evaluation_cases", { id: text("id").primaryKey(), incidentId: text("incident_id").notNull(), payloadJson: text("payload_json").notNull() });
+export const evaluationResults = sqliteTable("evaluation_results", { id: text("id").primaryKey(), caseId: text("case_id").notNull(), investigationId: text("investigation_id").notNull(), passed: integer("passed", { mode: "boolean" }).notNull(), executedAt: text("executed_at").notNull(), payloadJson: text("payload_json").notNull() }, table => [index("idx_evaluation_case_executed").on(table.caseId, table.executedAt)]);

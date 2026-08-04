@@ -24,5 +24,18 @@ flowchart LR
   DS --> OBS[Traces and evaluation]
 ```
 
-The deterministic layer owns facts and state transitions. Retrieval returns attributable documents. The AI layer receives only the bounded evidence packet and returns a strict recommendation schema. The guardrail layer verifies references and policy before an approval can be requested. The demo has no production write container or tool.
+The deterministic layer owns facts and state transitions. Retrieval returns attributable documents and down-ranks unapproved instruction-like content. The provider layer receives only the bounded evidence packet and returns a strict recommendation schema. Citation validation verifies every evidence ID, executed-tool lineage, batch-fact consistency, confidence, and protected-record actions. The policy layer can override synthesis and fail closed before approval.
 
+`HVB-2847` is implemented through `POST /api/investigations`, `POST /api/approvals`, and `POST /api/evaluations`. D1 stores normalized records plus a validated run snapshot. Tests use an in-memory repository behind the same contract. The four other incident stories remain client-side previews and the demo has no production write tool.
+
+```mermaid
+flowchart TD
+  API[Server route: incident ID only] --> WF[Explicit workflow orchestrator]
+  WF --> T[Six deterministic tools]
+  T --> RET[Weighted local retrieval]
+  RET --> MOCK[Provider-neutral mock synthesis]
+  MOCK --> CV[Citation and fact validation]
+  CV --> POL[Deterministic safety policy]
+  POL --> D1[(D1 persisted state)]
+  D1 --> UI[Investigation, trace, approval, evaluation UI]
+```

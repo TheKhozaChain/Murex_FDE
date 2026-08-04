@@ -13,5 +13,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      - run: npm run typecheck
       - run: npm test
-
+      - run: npm run eval -- --case HVB-2847
+        env:
+          AI_PROVIDER: mock

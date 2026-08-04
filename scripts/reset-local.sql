@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS approval_decisions;
+DROP TABLE IF EXISTS audit_events;
+DROP TABLE IF EXISTS evaluation_results;
+DROP TABLE IF EXISTS evaluation_cases;
+DROP TABLE IF EXISTS evidence_records;
+DROP TABLE IF EXISTS policy_decisions;
+DROP TABLE IF EXISTS recommendations;
+DROP TABLE IF EXISTS retrieved_documents;
+DROP TABLE IF EXISTS tool_executions;
+DROP TABLE IF EXISTS investigation_runs;
+DROP TABLE IF EXISTS incidents;

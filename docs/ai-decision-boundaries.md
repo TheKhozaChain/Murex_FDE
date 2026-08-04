@@ -10,7 +10,7 @@ Local retrieval searches synthetic runbooks, incident history, workflow notes, e
 
 ## Bounded AI assistance
 
-An LLM may synthesise the closed evidence set, rank plausible causes, identify contradictions, explain uncertainty, draft a cited investigation summary, and translate technical findings for stakeholders. Output must pass a strict schema and every factual claim must cite supplied evidence.
+A provider may synthesise the closed evidence set, rank plausible causes, explain uncertainty, draft a cited investigation summary, and translate technical findings for stakeholders. The implemented provider is a deterministic mock operating through the same interface intended for a future model adapter. It does not read a prewritten root cause. Output must pass a strict Zod schema and every factual claim must cite supplied evidence.
 
 ## Human responsibility
 
@@ -18,5 +18,4 @@ Humans confirm root cause, accept or reject recommendations, approve a batch rer
 
 ## Hard boundaries
 
-The demonstration never modifies a trade, market-data value, report configuration, batch state, or production-like record. Low confidence, conflicting documents, missing required inputs, critical severity, invalid output, or any proposed mutation causes the workflow to fail closed.
-
+The demonstration never modifies a trade, market-data value, report configuration, batch state, or production-like record. Unknown citations, batch-fact contradiction, low confidence, missing required inputs, critical severity, malformed output, or a proposed mutation causes the workflow to fail closed. Recommendation state remains operationally inert until an approval record exists.

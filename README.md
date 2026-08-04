@@ -14,7 +14,7 @@ No setup, credentials, or model API key is required to inspect the hosted synthe
 
 - Discovery of the real reporting process, including stakeholder conflicts and operating incentives
 - Explicit decisions about where deterministic software, AI assistance, and human judgment belong
-- Five realistic end-to-end exception scenarios across risk, finance, operations, and regulatory reporting
+- One executable, persisted stale-FX investigation and four clearly identified scenario previews across finance, operations, and regulatory reporting
 - Evidence lineage, uncertainty, fail-closed behavior, approval gates, audit events, and safe observability
 - A synthetic evaluation dashboard and transparent, conservative value model
 - Role-aware views for support analysts, implementation engineers, and programme sponsors
@@ -40,7 +40,7 @@ flowchart LR
   G -. fail closed .-> E[Escalation]
 ```
 
-The demo is TypeScript-first and local-first. The default mock provider makes it usable without a paid model API. The first slice uses device-local interaction state; planned persistence adapters target SQLite/D1 for the hosted demo and PostgreSQL for conventional deployment. Core workflow logic is intentionally explicit rather than hidden behind a large agent framework.
+The demo is TypeScript-first and local-first. `HVB-2847` executes server-side: deterministic tools derive the stale timestamp, affected exposure, successful batch state, materiality, and evidence completeness; local retrieval returns attributable guidance; a provider-neutral deterministic mock synthesises a strict recommendation; citation and policy layers can fail closed; and D1 stores the run, tool outputs, recommendation, policy, approval, audit trail, and evaluation. The other four narratives remain non-executable previews. Core workflow logic is explicit rather than hidden behind an agent framework.
 
 ## Local demo
 
@@ -57,11 +57,15 @@ Open the local URL printed by the development server. Start in **Demo launcher**
 npm run build
 npm test
 npm run lint
+npm run typecheck
+npm run eval -- --case HVB-2847
 ```
+
+The local Cloudflare preview uses the `DB` D1 binding. `npm run db:reset` recreates the checked-in local schema and `npm run db:seed` inserts the structured synthetic `HVB-2847` input. The hosted site owns its real D1 resource; no database credentials are required.
 
 ## Evaluation
 
-The evaluation view documents the intended 30-case golden suite and its release gates. Current dashboard results are labelled **simulated** and are not claims about a production model. The implementation plan tracks extraction of the workflow and benchmark into executable, versioned server-side packages.
+The evaluation screen runs one genuine golden case, `GOLDEN-HVB-2847-v1`, through the same workflow used by the UI and persists the measured result. It scores deterministic facts, root cause, evidence grounding, citation validity, action, prohibited-action compliance, escalation, summary completeness, confidence, and policy. The 30-case suite is explicitly roadmap and is not presented as completed evidence.
 
 ## Security model
 
@@ -79,8 +83,9 @@ See `docs/threat-model.md` and `docs/ai-decision-boundaries.md`.
 - Educational portfolio simulation, not production software or a real platform integration
 - Synthetic scenarios and simulated performance/value metrics
 - Mock synthesis in the default build; external provider adapters are roadmap work
-- Device-local approval state in the first vertical slice
-- No authentication, production deployment controls, or regulated-record retention implementation
+- Shared public-demo D1 state; demo identity is labelled and is not authentication
+- No production authentication, tenant isolation, production deployment controls, or regulated-record retention implementation
+- Four scenario narratives remain presentation previews rather than executable workflows
 
 ## Roadmap
 
