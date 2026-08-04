@@ -1,11 +1,9 @@
-# 7–10 Minute Demo Script
+# 8–12 Minute Demo Script
 
-1. Introduce fictional HarbourView Bank and the real operational pattern: daily reporting exceptions assembled from fragmented evidence.
-2. Open Workflow & Interviews. Show the nine-stage process and point out stakeholder conflicts.
-3. Open Opportunity Matrix. Contrast deterministic status parsing and reconciliation with bounded AI synthesis and human-only production decisions.
-4. Launch Stale FX Market Data. Explain that this scenario is executable. Run the server workflow, inspect the derived timestamp, AUD 12.8m exposure and successful-batch evidence, then open the cited recommendation.
-5. Show the approval gate and audit record. Emphasise that no action tool can change data or rerun a job.
-6. Explain that the other four scenarios remain portfolio previews; do not present them as persisted engines.
-7. Open Evaluation and run the one executable golden case. Then open Observability to show the persisted run ID, tool spans, retrieval, citation result, policy, and approval state.
-8. Open ROI & Value. Move an assumption and explain simulated, assumed, and projected labels.
-9. Close on the engagement report: this is workflow redesign with controlled AI, not a generic chatbot.
+1. Introduce fictional HarbourView Bank and the evidence-assembly problem. Show the deterministic/AI/human boundaries.
+2. Launch `HVB-2847`. Run the shared workflow and show the stale USD/JPY timestamp, AUD 12.8m exposure, successful batch, cited escalation, approval, and persisted audit trail. Outcome: diagnose a genuine fault.
+3. Launch `HVB-2829`. Show the 4.7% crude move, sensitivity contribution, carry, new trades, near-zero residual, complete population, valid timestamp, passing currency control, and successful batch. Emphasise that materiality triggers Product Control review—not technical repair. Outcome: explain a legitimate business movement.
+4. Launch `HVB-2822`. Contrast the current timeout with historical mapping similarity. Show the missing manifest, 13/14 segments, inconclusive mapping control, deadline risk, 41% confidence, and failed-closed policy. Attempting confirmed-resolution approval is prohibited; accept only the Incident Commander + Regulatory Reporting escalation disposition. Outcome: fail closed under uncertainty.
+5. Reload a completed case and show persisted evidence, decision, and audit events. Open Observability for real tool spans and policy results.
+6. Run the evaluation dashboard. Show three measured cases, twelve checks per case, persisted run IDs, and the 30-case target labelled roadmap.
+7. Close with two preview-only scenarios and the public boundaries: synthetic data, deterministic mock, demo identity, shared D1, and no production connectivity or mutation.

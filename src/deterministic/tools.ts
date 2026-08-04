@@ -1,94 +1,108 @@
-import { incidentInputSchema, type Evidence, type IncidentInput, type ToolExecution } from "../domain/models";
+import { incidentInputSchema, type Evidence, type Hvb2822Input, type Hvb2829Input, type Hvb2847Input, type IncidentInput, type ToolExecution } from "../domain/models";
 
 export type ToolRuntime = { now: () => string; id: () => string };
 const defaultRuntime: ToolRuntime = { now: () => new Date().toISOString(), id: () => crypto.randomUUID() };
-
-function execution(
-  investigationId: string, toolName: string, status: ToolExecution["status"], derivedFacts: Record<string, unknown>,
-  evidence: Evidence[], warnings: string[] = [], error: string | null = null, runtime = defaultRuntime,
-): ToolExecution {
-  const startedAt = runtime.now();
-  return { id: runtime.id(), investigationId, toolName, status, derivedFacts, evidence, evidenceIds: evidence.map(item => item.id), warnings, startedAt, completedAt: runtime.now(), durationMs: 0, error };
+function execution(investigationId: string, toolName: string, status: ToolExecution["status"], derivedFacts: Record<string, unknown>, evidence: Evidence[], warnings: string[] = [], error: string | null = null, runtime = defaultRuntime): ToolExecution {
+  const startedAt = runtime.now(); return { id: runtime.id(), investigationId, toolName, status, derivedFacts, evidence, evidenceIds: evidence.map(item => item.id), warnings, startedAt, completedAt: runtime.now(), durationMs: 0, error };
 }
+const ev = (id: string, kind: Evidence["kind"], title: string, detail: string, source: string, signal: Evidence["signal"], toolName: string): Evidence => ({ id, kind, title, detail, source, signal, toolName });
 
 export function validateIncidentPayload(investigationId: string, raw: unknown, runtime?: ToolRuntime): ToolExecution {
   const parsed = incidentInputSchema.safeParse(raw);
   if (!parsed.success) return execution(investigationId, "incident.validate", "failed", { valid: false }, [], parsed.error.issues.map(issue => issue.message), "Incident payload failed schema validation", runtime);
-  const evidence: Evidence = { id: "EV-PAYLOAD-VALID", kind: "policy", title: "Incident payload validated", detail: "The server-owned HVB-2847 payload passed the runtime schema.", source: "incident.validate", signal: "context", toolName: "incident.validate" };
-  return execution(investigationId, "incident.validate", "passed", { valid: true, incidentId: parsed.data.id, fieldCount: Object.keys(parsed.data).length }, [evidence], [], null, runtime);
+  return execution(investigationId, "incident.validate", "passed", { valid: true, incidentId: parsed.data.id, fieldCount: Object.keys(parsed.data).length }, [ev("EV-PAYLOAD-VALID", "policy", "Incident payload validated", `The server-owned ${parsed.data.id} payload passed its runtime schema.`, "incident.validate", "context", "incident.validate")], [], null, runtime);
 }
 
-export function validateMarketDataFreshness(investigationId: string, incident: IncidentInput, runtime?: ToolRuntime): ToolExecution {
-  const record = incident.marketData.find(item => item.currencyPair === "USD/JPY")!;
-  const ageAtThresholdMinutes = (Date.parse(record.requiredFreshAfter) - Date.parse(record.observedAt)) / 60_000;
-  const stale = Date.parse(record.observedAt) < Date.parse(record.requiredFreshAfter);
-  const evidence: Evidence = {
-    id: "EV-MD-FRESHNESS", kind: "market_data", title: `${record.currencyPair} freshness ${stale ? "breach" : "pass"}`,
-    detail: `${record.currencyPair} observed at ${record.observedAt}; required after ${record.requiredFreshAfter}. Age at threshold ${ageAtThresholdMinutes} minutes.`,
-    source: record.recordId, signal: stale ? "supports" : "context", toolName: "market_data.freshness",
-  };
-  return execution(investigationId, "market_data.freshness", stale ? "warning" : "passed", { stale, currencyPair: record.currencyPair, observedAt: record.observedAt, requiredFreshAfter: record.requiredFreshAfter, ageAtThresholdMinutes }, [evidence], stale ? ["Market observation breaches the configured freshness boundary."] : [], null, runtime);
+// HVB-2847
+export function validateMarketDataFreshness(investigationId: string, incident: Hvb2847Input, runtime?: ToolRuntime): ToolExecution {
+  const record = incident.marketData.find(item => item.currencyPair === "USD/JPY")!; const ageAtThresholdMinutes = (Date.parse(record.requiredFreshAfter) - Date.parse(record.observedAt)) / 60_000; const stale = Date.parse(record.observedAt) < Date.parse(record.requiredFreshAfter);
+  return execution(investigationId, "market_data.freshness", stale ? "warning" : "passed", { stale, currencyPair: record.currencyPair, observedAt: record.observedAt, requiredFreshAfter: record.requiredFreshAfter, ageAtThresholdMinutes }, [ev("EV-MD-FRESHNESS", "market_data", `${record.currencyPair} freshness ${stale ? "breach" : "pass"}`, `${record.currencyPair} observed at ${record.observedAt}; required after ${record.requiredFreshAfter}. Age at threshold ${ageAtThresholdMinutes} minutes.`, record.recordId, stale ? "supports" : "context", "market_data.freshness")], stale ? ["Market observation breaches the configured freshness boundary."] : [], null, runtime);
 }
-
-export function calculateAffectedExposure(investigationId: string, incident: IncidentInput, runtime?: ToolRuntime): ToolExecution {
-  const currencyPair = incident.marketData[0].currencyPair;
-  const sensitivePositions = incident.positions.filter(position => position.currencyPair === currencyPair);
-  const affectedExposureAud = sensitivePositions.reduce((total, position) => total + Math.abs(position.exposureAud), 0);
-  const evidence: Evidence = {
-    id: "EV-AFFECTED-EXPOSURE", kind: "exposure", title: "Affected FX exposure calculated",
-    detail: `${sensitivePositions.length} ${currencyPair}-sensitive positions total AUD ${affectedExposureAud.toLocaleString("en-AU")}.`,
-    source: "exposure.calculate", signal: "supports", toolName: "exposure.calculate",
-  };
-  const reconciliationEvidence: Evidence = {
-    id: "EV-RECONCILIATION", kind: "reconciliation", title: "FX movement concentration reconciled",
-    detail: `${incident.reconciliation.concentrationPercent}% of the reported movement is concentrated in ${currencyPair}-sensitive positions; population control ${incident.reconciliation.passedPopulationControl ? "passed" : "failed"}.`,
-    source: incident.reconciliation.controlId, signal: "supports", toolName: "exposure.calculate",
-  };
-  return execution(investigationId, "exposure.calculate", "passed", { currencyPair, positionCount: sensitivePositions.length, affectedExposureAud, positionIds: sensitivePositions.map(position => position.positionId), concentrationPercent: incident.reconciliation.concentrationPercent }, [evidence, reconciliationEvidence], [], null, runtime);
+export function calculateAffectedExposure(investigationId: string, incident: Hvb2847Input, runtime?: ToolRuntime): ToolExecution {
+  const currencyPair = incident.marketData[0].currencyPair; const positions = incident.positions.filter(position => position.currencyPair === currencyPair); const affectedExposureAud = positions.reduce((total, position) => total + Math.abs(position.exposureAud), 0);
+  return execution(investigationId, "exposure.calculate", "passed", { currencyPair, positionCount: positions.length, affectedExposureAud, concentrationPercent: incident.reconciliation.concentrationPercent }, [ev("EV-AFFECTED-EXPOSURE", "exposure", "Affected FX exposure calculated", `${positions.length} positions total AUD ${affectedExposureAud.toLocaleString("en-AU")}.`, "exposure.calculate", "supports", "exposure.calculate"), ev("EV-RECONCILIATION", "reconciliation", "FX movement concentration reconciled", `${incident.reconciliation.concentrationPercent}% concentration; population control ${incident.reconciliation.passedPopulationControl ? "passed" : "failed"}.`, incident.reconciliation.controlId, "supports", "exposure.calculate")], [], null, runtime);
 }
-
 export function validateBatchDependencies(investigationId: string, incident: IncidentInput, runtime?: ToolRuntime): ToolExecution {
-  const failedDependencies = Object.entries(incident.batch.dependencyStatuses).filter(([, status]) => status !== "SUCCEEDED").map(([name]) => name);
-  const succeeded = incident.batch.status === "SUCCEEDED" && failedDependencies.length === 0;
-  const evidence: Evidence = {
-    id: "EV-BATCH-STATUS", kind: "batch", title: `Batch ${incident.batch.status.toLowerCase()}`,
-    detail: `${incident.batch.jobId} completed ${incident.batch.status} at ${incident.batch.completedAt}; ${failedDependencies.length} non-successful dependencies.`,
-    source: incident.batch.jobId, signal: "context", toolName: "batch.dependencies",
-  };
-  return execution(investigationId, "batch.dependencies", succeeded ? "passed" : "warning", { batchSucceeded: succeeded, batchStatus: incident.batch.status, failedDependencies }, [evidence], succeeded ? [] : ["One or more batch dependencies did not succeed."], null, runtime);
+  const failedDependencies = Object.entries(incident.batch.dependencyStatuses).filter(([, status]) => status !== "SUCCEEDED").map(([name]) => name); const succeeded = incident.batch.status === "SUCCEEDED" && failedDependencies.length === 0;
+  return execution(investigationId, "batch.dependencies", succeeded ? "passed" : "warning", { batchSucceeded: succeeded, batchStatus: incident.batch.status, failedDependencies }, [ev("EV-BATCH-STATUS", "batch", `Batch ${incident.batch.status.toLowerCase()}`, `${incident.batch.jobId} completed ${incident.batch.status}; ${failedDependencies.length} non-successful dependencies.`, incident.batch.jobId, succeeded ? "context" : "supports", "batch.dependencies")], succeeded ? [] : ["One or more batch dependencies did not succeed."], null, runtime);
 }
-
-export function checkSeverityAndMateriality(investigationId: string, incident: IncidentInput, affectedExposureAud: number, runtime?: ToolRuntime): ToolExecution {
+export function checkSeverityAndMateriality(investigationId: string, incident: Hvb2847Input, affectedExposureAud: number, runtime?: ToolRuntime): ToolExecution {
   const material = affectedExposureAud >= incident.policies.materialityExposureAud;
-  const requiresEscalation = incident.severity === "Critical" || incident.severity === "High" || material;
-  const evidence: Evidence = {
-    id: "EV-MATERIALITY", kind: "policy", title: "Materiality policy evaluated",
-    detail: `AUD ${affectedExposureAud.toLocaleString("en-AU")} affected exposure is ${material ? "above" : "below"} the AUD ${incident.policies.materialityExposureAud.toLocaleString("en-AU")} threshold; severity is ${incident.severity}.`,
-    source: "HVB synthetic materiality policy v1", signal: "supports", toolName: "policy.materiality",
-  };
-  return execution(investigationId, "policy.materiality", material ? "warning" : "passed", { severity: incident.severity, material, requiresEscalation, affectedExposureAud, thresholdAud: incident.policies.materialityExposureAud }, [evidence], material ? ["Materiality threshold exceeded; accountable approval is required."] : [], null, runtime);
+  return execution(investigationId, "policy.materiality", material ? "warning" : "passed", { severity: incident.severity, material, requiresEscalation: incident.severity === "High" || material, affectedExposureAud, thresholdAud: incident.policies.materialityExposureAud }, [ev("EV-MATERIALITY", "policy", "Materiality policy evaluated", `AUD ${affectedExposureAud.toLocaleString("en-AU")} is ${material ? "above" : "below"} the threshold.`, "synthetic materiality policy", "supports", "policy.materiality")], material ? ["Materiality threshold exceeded."] : [], null, runtime);
 }
 
-export function checkRequiredEvidence(investigationId: string, incident: IncidentInput, existingEvidence: Evidence[], runtime?: ToolRuntime): ToolExecution {
-  const kinds = new Set(existingEvidence.map(item => item.kind));
-  const missingKinds = incident.policies.requiredEvidenceKinds.filter(kind => !kinds.has(kind));
-  const complete = missingKinds.length === 0;
-  const evidence: Evidence = {
-    id: "EV-EVIDENCE-COMPLETE", kind: "policy", title: `Required evidence ${complete ? "complete" : "incomplete"}`,
-    detail: complete ? `All required evidence kinds are present: ${incident.policies.requiredEvidenceKinds.join(", ")}.` : `Missing evidence kinds: ${missingKinds.join(", ")}.`,
-    source: "evidence.completeness", signal: complete ? "context" : "contradicts", toolName: "evidence.completeness",
-  };
-  return execution(investigationId, "evidence.completeness", complete ? "passed" : "failed", { complete, missingKinds, presentKinds: [...kinds] }, [evidence], complete ? [] : ["Required evidence is missing; fail closed."], complete ? null : "Required evidence incomplete", runtime);
+// HVB-2829
+export function calculateMarketMovement(investigationId: string, incident: Hvb2829Input, runtime?: ToolRuntime): ToolExecution {
+  const priceChangeUsd = incident.pnl.currentCrudePriceUsd - incident.pnl.priorCrudePriceUsd; const movementPercent = priceChangeUsd / incident.pnl.priorCrudePriceUsd * 100;
+  return execution(investigationId, "pnl.market_movement", "passed", { priceChangeUsd, movementPercent }, [ev("EV-PNL-MARKET-MOVE", "market_data", "Crude market movement calculated", `Price moved from USD ${incident.pnl.priorCrudePriceUsd} to USD ${incident.pnl.currentCrudePriceUsd}, a ${movementPercent.toFixed(1)}% movement.`, "synthetic crude prices", "supports", "pnl.market_movement")], [], null, runtime);
+}
+export function calculateSensitivityPnl(investigationId: string, incident: Hvb2829Input, runtime?: ToolRuntime): ToolExecution {
+  const marketContributionAud = (incident.pnl.currentCrudePriceUsd - incident.pnl.priorCrudePriceUsd) * incident.pnl.barrelsSensitivity / incident.pnl.audUsdRate;
+  return execution(investigationId, "pnl.sensitivity", "passed", { marketContributionAud, barrelsSensitivity: incident.pnl.barrelsSensitivity, audUsdRate: incident.pnl.audUsdRate }, [ev("EV-PNL-SENSITIVITY", "trade", "Sensitivity-based P&L calculated", `Price movement and ${incident.pnl.barrelsSensitivity.toLocaleString()} barrel sensitivity explain AUD ${marketContributionAud.toFixed(2)}.`, "deterministic P&L explain", "supports", "pnl.sensitivity")], [], null, runtime);
+}
+export function calculateResidualPnl(investigationId: string, incident: Hvb2829Input, marketContributionAud: number, runtime?: ToolRuntime): ToolExecution {
+  const explainedPnlAud = marketContributionAud + incident.pnl.carryContributionAud + incident.pnl.newTradeContributionAud; const residualAud = incident.pnl.reportedPnlAud - explainedPnlAud; const withinTolerance = Math.abs(residualAud) <= incident.pnl.residualToleranceAud;
+  return execution(investigationId, "pnl.residual", withinTolerance ? "passed" : "warning", { explainedPnlAud, reportedPnlAud: incident.pnl.reportedPnlAud, residualAud, residualToleranceAud: incident.pnl.residualToleranceAud, withinTolerance, carryContributionAud: incident.pnl.carryContributionAud, newTradeContributionAud: incident.pnl.newTradeContributionAud }, [ev("EV-PNL-RESIDUAL", "reconciliation", `Residual ${withinTolerance ? "within" : "outside"} tolerance`, `Reported AUD ${incident.pnl.reportedPnlAud.toFixed(2)} less explained AUD ${explainedPnlAud.toFixed(2)} leaves AUD ${residualAud.toFixed(2)}.`, "pnl.residual", withinTolerance ? "supports" : "contradicts", "pnl.residual")], withinTolerance ? [] : ["Residual exceeds configured tolerance."], null, runtime);
+}
+export function validateTradePopulation(investigationId: string, incident: Hvb2829Input, runtime?: ToolRuntime): ToolExecution {
+  const complete = incident.tradePopulation.actual === incident.tradePopulation.expected;
+  return execution(investigationId, "trade.population", complete ? "passed" : "failed", { complete, ...incident.tradePopulation, difference: incident.tradePopulation.actual - incident.tradePopulation.expected }, [ev("EV-TRADE-POPULATION", "trade", `Trade population ${complete ? "complete" : "incomplete"}`, `${incident.tradePopulation.actual} actual of ${incident.tradePopulation.expected} expected trades.`, "population control", complete ? "supports" : "contradicts", "trade.population")], complete ? [] : ["Trade population is incomplete."], complete ? null : "Population incomplete", runtime);
+}
+export function validateValuationTimestamp(investigationId: string, incident: Hvb2829Input, runtime?: ToolRuntime): ToolExecution {
+  const valid = Date.parse(incident.valuation.observedAt) >= Date.parse(incident.valuation.requiredAfter);
+  return execution(investigationId, "valuation.timestamp", valid ? "passed" : "failed", { valid, ...incident.valuation }, [ev("EV-VALUATION-TIMESTAMP", "market_data", `Valuation timestamp ${valid ? "valid" : "stale"}`, `Observed ${incident.valuation.observedAt}; required after ${incident.valuation.requiredAfter}.`, "valuation timestamp control", valid ? "supports" : "contradicts", "valuation.timestamp")], valid ? [] : ["Valuation timestamp is stale."], valid ? null : "Invalid valuation timestamp", runtime);
+}
+export function validateCurrencyConversion(investigationId: string, incident: Hvb2829Input, runtime?: ToolRuntime): ToolExecution {
+  const passed = incident.currencyConversion.ratePresent && incident.currencyConversion.reconciled;
+  return execution(investigationId, "currency_conversion.control", passed ? "passed" : "failed", { passed, ...incident.currencyConversion }, [ev("EV-CURRENCY-CONTROL", "reconciliation", `Currency conversion control ${passed ? "passed" : "failed"}`, `${incident.currencyConversion.sourceCurrency}/${incident.currencyConversion.targetCurrency} rate present: ${incident.currencyConversion.ratePresent}; reconciled: ${incident.currencyConversion.reconciled}.`, incident.currencyConversion.controlId, passed ? "supports" : "contradicts", "currency_conversion.control")], passed ? [] : ["Currency conversion control failed."], passed ? null : "Currency conversion invalid", runtime);
+}
+export function classifyPnlThreshold(investigationId: string, incident: Hvb2829Input, runtime?: ToolRuntime): ToolExecution {
+  const reviewRequired = Math.abs(incident.pnl.reportedPnlAud) >= incident.policies.reviewThresholdAud; const material = Math.abs(incident.pnl.reportedPnlAud) >= incident.policies.materialityAud;
+  return execution(investigationId, "pnl.materiality", reviewRequired ? "warning" : "passed", { reviewRequired, material, reportedPnlAud: incident.pnl.reportedPnlAud, reviewThresholdAud: incident.policies.reviewThresholdAud, materialityAud: incident.policies.materialityAud }, [ev("EV-PNL-MATERIALITY", "policy", "P&L threshold classified", `AUD ${incident.pnl.reportedPnlAud.toLocaleString("en-AU")} exceeds review threshold; material: ${material}.`, "P&L materiality policy", "context", "pnl.materiality")], reviewRequired ? ["Business review is required; a breach is not evidence of a defect."] : [], null, runtime);
 }
 
-export function executeDeterministicTools(investigationId: string, incident: IncidentInput, runtime?: ToolRuntime): ToolExecution[] {
-  const validation = validateIncidentPayload(investigationId, incident, runtime);
-  if (validation.status === "failed") return [validation];
-  const freshness = validateMarketDataFreshness(investigationId, incident, runtime);
-  const exposure = calculateAffectedExposure(investigationId, incident, runtime);
-  const dependency = validateBatchDependencies(investigationId, incident, runtime);
-  const materiality = checkSeverityAndMateriality(investigationId, incident, Number(exposure.derivedFacts.affectedExposureAud), runtime);
-  const evidenceBeforeCompleteness = [validation, freshness, exposure, dependency, materiality].flatMap(item => item.evidence);
-  const completeness = checkRequiredEvidence(investigationId, incident, evidenceBeforeCompleteness, runtime);
-  return [validation, freshness, exposure, dependency, materiality, completeness];
+// HVB-2822
+export function validateSourceManifest(investigationId: string, incident: Hvb2822Input, runtime?: ToolRuntime): ToolExecution {
+  const complete = incident.source.manifestPresent;
+  return execution(investigationId, "source.manifest", complete ? "passed" : "failed", { complete, manifestPresent: incident.source.manifestPresent }, [ev("EV-SOURCE-MANIFEST", "manifest", `Source manifest ${complete ? "present" : "missing"}`, complete ? "Required source manifest is present." : "Required source manifest is missing; completeness cannot be confirmed.", "source manifest control", complete ? "supports" : "contradicts", "source.manifest")], complete ? [] : ["Required source manifest is missing."], complete ? null : "Manifest missing", runtime);
 }
+export function reconcileSourceSegments(investigationId: string, incident: Hvb2822Input, runtime?: ToolRuntime): ToolExecution {
+  const countMatches = incident.source.receivedSegments === incident.source.expectedSegments; const populationEstablished = countMatches && incident.source.manifestPresent;
+  return execution(investigationId, "source.segments", populationEstablished ? "passed" : "failed", { countMatches, populationEstablished, expectedSegments: incident.source.expectedSegments, receivedSegments: incident.source.receivedSegments, missingSegments: incident.source.expectedSegments - incident.source.receivedSegments }, [ev("EV-SEGMENT-RECONCILIATION", "reconciliation", `Source population ${populationEstablished ? "complete" : "unestablished"}`, `${incident.source.receivedSegments} of ${incident.source.expectedSegments} segments received; manifest present: ${incident.source.manifestPresent}.`, "segment reconciliation", populationEstablished ? "supports" : "contradicts", "source.segments")], populationEstablished ? [] : ["Population completeness cannot be established."], populationEstablished ? null : "Source population unestablished", runtime);
+}
+export function detectSourceTimeout(investigationId: string, incident: Hvb2822Input, runtime?: ToolRuntime): ToolExecution {
+  return execution(investigationId, "source.timeout", incident.source.readerTimeout ? "warning" : "passed", { timeoutDetected: incident.source.readerTimeout, timeoutSeconds: incident.source.timeoutSeconds, provesRootCause: false }, [ev("EV-SOURCE-TIMEOUT", "log", `Source-reader timeout ${incident.source.readerTimeout ? "detected" : "not detected"}`, `Current log records a ${incident.source.timeoutSeconds}s timeout. A timeout observation does not by itself prove root cause.`, "current application log", incident.source.readerTimeout ? "supports" : "context", "source.timeout")], incident.source.readerTimeout ? ["Timeout is direct current evidence of an event, not proof of cause."] : [], null, runtime);
+}
+export function validateMappingStatus(investigationId: string, incident: Hvb2822Input, runtime?: ToolRuntime): ToolExecution {
+  const conclusive = incident.mapping.result === "PASSED" || incident.mapping.result === "FAILED"; const defectConfirmed = incident.mapping.result === "FAILED";
+  return execution(investigationId, "mapping.validation", conclusive ? (defectConfirmed ? "warning" : "passed") : "failed", { result: incident.mapping.result, conclusive, defectConfirmed }, [ev("EV-MAPPING-VALIDATION", "mapping", `Mapping validation ${incident.mapping.result.toLowerCase()}`, `Current mapping control result is ${incident.mapping.result}; historical similarity cannot change this result.`, incident.mapping.controlId, conclusive ? "context" : "contradicts", "mapping.validation")], conclusive ? [] : ["Current mapping validation is inconclusive."], conclusive ? null : "Mapping evidence inconclusive", runtime);
+}
+export function assessRegulatoryDeadline(investigationId: string, incident: Hvb2822Input, runtime?: ToolRuntime): ToolExecution {
+  const minutesToSignoff = (Date.parse(incident.regulatory.internalSignoffDeadline) - Date.parse(incident.regulatory.assessedAt)) / 60_000; const atRisk = minutesToSignoff <= incident.policies.signoffRiskWindowMinutes;
+  return execution(investigationId, "regulatory.deadline", atRisk ? "warning" : "passed", { atRisk, minutesToSignoff, ...incident.regulatory }, [ev("EV-REGULATORY-DEADLINE", "deadline", `Internal sign-off ${atRisk ? "at risk" : "within tolerance"}`, `${minutesToSignoff} minutes remain to internal sign-off.`, "regulatory calendar", atRisk ? "supports" : "context", "regulatory.deadline")], atRisk ? ["Critical reporting escalation window is active."] : [], null, runtime);
+}
+export function classifySeverity(investigationId: string, incident: Hvb2822Input, runtime?: ToolRuntime): ToolExecution {
+  const critical = incident.severity === "Critical";
+  return execution(investigationId, "incident.severity", critical ? "warning" : "passed", { severity: incident.severity, critical }, [ev("EV-CRITICAL-SEVERITY", "policy", `Severity ${incident.severity}`, "Critical reports require incident-command and regulatory escalation when root cause is unconfirmed.", "severity policy", "supports", "incident.severity")], critical ? ["Critical incident cannot be auto-resolved."] : [], null, runtime);
+}
+export function detectEvidenceContradiction(investigationId: string, incident: Hvb2822Input, runtime?: ToolRuntime): ToolExecution {
+  const directCurrentEvidence = incident.source.readerTimeout ? ["source_reader_timeout"] : []; const historicalSimilarity = incident.history.map(item => `${item.incidentId}:${item.confirmedCause}`); const missingEvidence = incident.source.manifestPresent ? [] : ["source_manifest"]; const conflictingHypotheses = incident.source.readerTimeout && incident.history.some(item => /mapping/i.test(item.confirmedCause));
+  return execution(investigationId, "evidence.contradiction", conflictingHypotheses ? "warning" : "passed", { directCurrentEvidence, historicalSimilarity, missingEvidence, conflictingHypotheses, historyIsProof: false }, [ev("EV-EVIDENCE-CONTRADICTION", "history", `Competing explanations ${conflictingHypotheses ? "present" : "not present"}`, `Current timeout evidence and historical mapping similarity support competing hypotheses. Historical incidents are context, never direct proof.`, "contradiction detector", conflictingHypotheses ? "contradicts" : "context", "evidence.contradiction"), ev("HI-REG-MAPPING", "history", "Similar historical mapping incident", `Historical ${incident.history[0]?.incidentId} had a confirmed mapping defect; it does not confirm the current cause.`, "sanitised incident history", "context", "evidence.contradiction")], conflictingHypotheses ? ["Root cause cannot be confirmed from competing explanations."] : [], null, runtime);
+}
+
+function evidenceCompleteness(investigationId: string, requiredKinds: Evidence["kind"][], existing: Evidence[], requiredNames: string[], missingNames: string[], runtime?: ToolRuntime): ToolExecution {
+  const kinds = new Set(existing.map(item => item.kind)); const missingKinds = requiredKinds.filter(kind => !kinds.has(kind)); const missing = [...new Set([...missingKinds, ...missingNames])]; const complete = missing.length === 0;
+  return execution(investigationId, "evidence.completeness", complete ? "passed" : "failed", { complete, missingKinds: missing, presentKinds: [...kinds], requiredEvidence: requiredNames }, [ev("EV-EVIDENCE-COMPLETE", "policy", `Required evidence ${complete ? "complete" : "incomplete"}`, complete ? "All required evidence is present." : `Missing or unusable evidence: ${missing.join(", ")}.`, "evidence.completeness", complete ? "context" : "contradicts", "evidence.completeness")], complete ? [] : ["Required evidence is missing; fail closed."], complete ? null : "Required evidence incomplete", runtime);
+}
+export function checkRequiredEvidence(investigationId: string, incident: IncidentInput, existing: Evidence[], runtime?: ToolRuntime): ToolExecution {
+  if (incident.id === "HVB-2822") {
+    const missing = [!incident.source.manifestPresent ? "source_manifest" : "", incident.mapping.result === "INCONCLUSIVE" || incident.mapping.result === "NOT_RUN" ? "conclusive_mapping_validation" : ""].filter(Boolean);
+    return evidenceCompleteness(investigationId, incident.policies.requiredEvidenceKinds, existing, incident.policies.requiredEvidence, missing, runtime);
+  }
+  return evidenceCompleteness(investigationId, incident.policies.requiredEvidenceKinds, existing, incident.policies.requiredEvidenceKinds, [], runtime);
+}
+
+function execute2847(id: string, incident: Hvb2847Input, runtime?: ToolRuntime) { const validation = validateIncidentPayload(id, incident, runtime); const freshness = validateMarketDataFreshness(id, incident, runtime); const exposure = calculateAffectedExposure(id, incident, runtime); const batch = validateBatchDependencies(id, incident, runtime); const materiality = checkSeverityAndMateriality(id, incident, Number(exposure.derivedFacts.affectedExposureAud), runtime); const prior = [validation, freshness, exposure, batch, materiality]; return [...prior, checkRequiredEvidence(id, incident, prior.flatMap(x => x.evidence), runtime)]; }
+function execute2829(id: string, incident: Hvb2829Input, runtime?: ToolRuntime) { const validation = validateIncidentPayload(id, incident, runtime); const market = calculateMarketMovement(id, incident, runtime); const sensitivity = calculateSensitivityPnl(id, incident, runtime); const residual = calculateResidualPnl(id, incident, Number(sensitivity.derivedFacts.marketContributionAud), runtime); const population = validateTradePopulation(id, incident, runtime); const timestamp = validateValuationTimestamp(id, incident, runtime); const currency = validateCurrencyConversion(id, incident, runtime); const materiality = classifyPnlThreshold(id, incident, runtime); const batch = validateBatchDependencies(id, incident, runtime); const prior = [validation, market, sensitivity, residual, population, timestamp, currency, materiality, batch]; return [...prior, checkRequiredEvidence(id, incident, prior.flatMap(x => x.evidence), runtime)]; }
+function execute2822(id: string, incident: Hvb2822Input, runtime?: ToolRuntime) { const validation = validateIncidentPayload(id, incident, runtime); const manifest = validateSourceManifest(id, incident, runtime); const segments = reconcileSourceSegments(id, incident, runtime); const timeout = detectSourceTimeout(id, incident, runtime); const mapping = validateMappingStatus(id, incident, runtime); const deadline = assessRegulatoryDeadline(id, incident, runtime); const severity = classifySeverity(id, incident, runtime); const contradiction = detectEvidenceContradiction(id, incident, runtime); const batch = validateBatchDependencies(id, incident, runtime); const prior = [validation, manifest, segments, timeout, mapping, deadline, severity, contradiction, batch]; return [...prior, checkRequiredEvidence(id, incident, prior.flatMap(x => x.evidence), runtime)]; }
+export function executeDeterministicTools(investigationId: string, incident: IncidentInput, runtime?: ToolRuntime): ToolExecution[] { if (incident.id === "HVB-2847") return execute2847(investigationId, incident, runtime); if (incident.id === "HVB-2829") return execute2829(investigationId, incident, runtime); return execute2822(investigationId, incident, runtime); }

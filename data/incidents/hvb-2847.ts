@@ -1,6 +1,6 @@
-import type { IncidentInput } from "../../src/domain/models";
+import type { Hvb2847Input } from "../../src/domain/models";
 
-export const hvb2847Input: IncidentInput = {
+export const hvb2847Input: Hvb2847Input = {
   id: "HVB-2847",
   title: "Unexpected FX delta movement",
   report: "Daily Market Risk",
@@ -26,4 +26,3 @@ export const hvb2847Input: IncidentInput = {
   reconciliation: { controlId: "REC-FX-DELTA-0803", movementPercent: 18.4, concentrationPercent: 93, passedPopulationControl: true },
   policies: { freshnessThresholdMinutes: 60, materialityExposureAud: 10_000_000, requiredEvidenceKinds: ["market_data", "exposure", "batch", "reconciliation"] },
 };
-

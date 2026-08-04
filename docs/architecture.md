@@ -2,40 +2,24 @@
 
 ```mermaid
 flowchart TD
-  I[Incident selected] --> V[Validate payload]
-  V --> D[Gather deterministic evidence]
-  D --> R[Retrieve trusted guidance]
-  R --> S[Structured synthesis]
-  S --> C{Schema, citations, confidence, policy}
-  C -->|pass| H[Human approval]
-  C -->|fail| F[Fail closed and escalate]
-  H --> A[Append audit event]
-  F --> A
+  I[Executable incident ID] --> REG[Typed scenario registry]
+  REG --> V[Validate scenario input]
+  V --> D[Scenario deterministic tools]
+  D --> R[Scenario-aware local retrieval]
+  R --> S[Shared provider interface]
+  S --> C[Shared citation and fact validation]
+  C --> P[Shared safety policy]
+  P --> D1[(D1 persisted run)]
+  D1 --> H[Disposition-aware human decision]
+  H --> A[Append-only audit and evaluation]
 ```
 
-```mermaid
-flowchart LR
-  W[Web workbench] --> DS[Domain services]
-  DS --> DB[(Synthetic data store)]
-  DS --> RET[Local retrieval]
-  DS --> AI[Provider abstraction]
-  AI --> M[Mock default]
-  AI -. optional .-> O[OpenAI / Anthropic / compatible]
-  DS --> OBS[Traces and evaluation]
-```
+The registry selects structured input and deterministic tool adapters for `HVB-2847`, `HVB-2829`, or `HVB-2822`. It does not select a final answer. All scenarios then use the same orchestration, provider interface, recommendation schema, citation validation, policy engine, repository contract, audit model, trace model, APIs, and evaluation runner.
 
-The deterministic layer owns facts and state transitions. Retrieval returns attributable documents and down-ranks unapproved instruction-like content. The provider layer receives only the bounded evidence packet and returns a strict recommendation schema. Citation validation verifies every evidence ID, executed-tool lineage, batch-fact consistency, confidence, and protected-record actions. The policy layer can override synthesis and fail closed before approval.
+`HVB-2847` derives a stale observation and AUD 12.8m exposure. `HVB-2829` derives market movement, sensitivity P&L, residual, population, timestamp, currency, materiality, and batch controls. `HVB-2822` derives missing-manifest state, segment reconciliation, timeout occurrence, mapping status, deadline risk, severity, contradictions, and evidence completeness.
 
-`HVB-2847` is implemented through `POST /api/investigations`, `POST /api/approvals`, and `POST /api/evaluations`. D1 stores normalized records plus a validated run snapshot. Tests use an in-memory repository behind the same contract. The four other incident stories remain client-side previews and the demo has no production write tool.
+Retrieval preserves trust and provenance. Historical incidents are context, never direct current proof; instruction-like untrusted documents are penalised and cannot validate as citations. The context-driven deterministic mock constructs recommendations from tool facts, retrieval, missing evidence, contradictions, severity, and policy constraints.
 
-```mermaid
-flowchart TD
-  API[Server route: incident ID only] --> WF[Explicit workflow orchestrator]
-  WF --> T[Six deterministic tools]
-  T --> RET[Weighted local retrieval]
-  RET --> MOCK[Provider-neutral mock synthesis]
-  MOCK --> CV[Citation and fact validation]
-  CV --> POL[Deterministic safety policy]
-  POL --> D1[(D1 persisted state)]
-  D1 --> UI[Investigation, trace, approval, evaluation UI]
-```
+D1 needs no new tables for this milestone: existing scenario-neutral incident, run, tool, evidence, retrieval, recommendation, policy, approval, audit, evaluation-case, and evaluation-result records already support the added cases. Normalized records and validated run snapshots share one repository contract with the in-memory test adapter.
+
+No production write path exists. A normal result can request recommendation approval. A critical failed-closed result permits only approval of its escalation disposition; root cause and resolution remain unconfirmed.

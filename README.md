@@ -8,13 +8,14 @@ Murex FDE Workbench is a portfolio application showing how a Forward Deployed En
 
 **[Open the Murex FDE Workbench →](https://murex-fde-workbench.thekhoza.chatgpt.site)**
 
-No setup, credentials, or model API key is required to inspect the hosted synthetic demonstration. For a concise reviewer journey, open **Demo launcher**, launch **Stale FX market data**, run the controlled investigation, inspect its evidence citations, and record an approval decision. Then launch **Conflicting timeout diagnosis** to see the system fail closed.
+No setup, credentials, or model API key is required. For a concise reviewer journey, use **Demo launcher** to run `HVB-2847`, `HVB-2829`, and `HVB-2822`: diagnose a genuine fault, explain a legitimate movement without remediation, and fail closed under critical uncertainty.
 
 ## What the project demonstrates
 
 - Discovery of the real reporting process, including stakeholder conflicts and operating incentives
 - Explicit decisions about where deterministic software, AI assistance, and human judgment belong
-- One executable, persisted stale-FX investigation and four clearly identified scenario previews across finance, operations, and regulatory reporting
+- Three executable, persisted investigations and two clearly identified previews
+- A shared architecture that handles stale market data, legitimate P&L movement, and contradictory critical evidence
 - Evidence lineage, uncertainty, fail-closed behavior, approval gates, audit events, and safe observability
 - A synthetic evaluation dashboard and transparent, conservative value model
 - Role-aware views for support analysts, implementation engineers, and programme sponsors
@@ -40,7 +41,7 @@ flowchart LR
   G -. fail closed .-> E[Escalation]
 ```
 
-The demo is TypeScript-first and local-first. `HVB-2847` executes server-side: deterministic tools derive the stale timestamp, affected exposure, successful batch state, materiality, and evidence completeness; local retrieval returns attributable guidance; a provider-neutral deterministic mock synthesises a strict recommendation; citation and policy layers can fail closed; and D1 stores the run, tool outputs, recommendation, policy, approval, audit trail, and evaluation. The other four narratives remain non-executable previews. Core workflow logic is explicit rather than hidden behind an agent framework.
+The demo is TypeScript-first and local-first. A typed scenario registry selects structured input and deterministic adapters—not a final answer. `HVB-2847` derives a stale timestamp and affected exposure; `HVB-2829` derives its market/sensitivity/carry/new-trade P&L explain and passing controls; `HVB-2822` derives missing evidence, competing hypotheses, deadline risk, and a failed-closed disposition. All three share retrieval, provider interface, citation/fact validation, policy, D1 persistence, approval, audit, trace, APIs, and evaluation. Two other narratives remain non-executable previews.
 
 ## Local demo
 
@@ -58,14 +59,17 @@ npm run build
 npm test
 npm run lint
 npm run typecheck
+npm run eval
 npm run eval -- --case HVB-2847
+npm run eval -- --case HVB-2829
+npm run eval -- --case HVB-2822
 ```
 
-The local Cloudflare preview uses the `DB` D1 binding. `npm run db:reset` recreates the checked-in local schema and `npm run db:seed` inserts the structured synthetic `HVB-2847` input. The hosted site owns its real D1 resource; no database credentials are required.
+The local Cloudflare preview uses the `DB` D1 binding. `npm run db:reset` recreates the checked-in schema and `npm run db:seed` inserts all three structured synthetic inputs. The hosted site owns its D1 resource; no database credentials are required.
 
 ## Evaluation
 
-The evaluation screen runs one genuine golden case, `GOLDEN-HVB-2847-v1`, through the same workflow used by the UI and persists the measured result. It scores deterministic facts, root cause, evidence grounding, citation validity, action, prohibited-action compliance, escalation, summary completeness, confidence, and policy. The 30-case suite is explicitly roadmap and is not presented as completed evidence.
+The evaluation screen runs `GOLDEN-HVB-2847-v1`, `GOLDEN-HVB-2829-v1`, and `GOLDEN-HVB-2822-v1` through the same workflow used by the UI and persists their run IDs and measured results. Each case scores twelve dimensions covering deterministic facts, classification, cause, grounding, citations, action, prohibited actions, escalation, uncertainty, fail-closed behavior, summary, and policy. The 30-case suite is explicitly roadmap.
 
 ## Security model
 
@@ -85,11 +89,11 @@ See `docs/threat-model.md` and `docs/ai-decision-boundaries.md`.
 - Mock synthesis in the default build; external provider adapters are roadmap work
 - Shared public-demo D1 state; demo identity is labelled and is not authentication
 - No production authentication, tenant isolation, production deployment controls, or regulated-record retention implementation
-- Four scenario narratives remain presentation previews rather than executable workflows
+- Two scenario narratives remain presentation previews rather than executable workflows
 
 ## Roadmap
 
-The detailed checklist is in `PLAN.md`. Near-term work: persistent storage, 30+ executable golden cases, provider adapters, server-side RBAC, and full API/workflow/security/end-to-end tests.
+The detailed checklist is in `PLAN.md`. Near-term work: expand toward 30 golden cases, add provider adapters and authenticated tenant isolation, integrate external evidence sources, and establish production-grade retention and operational controls.
 
 ## Contributing
 

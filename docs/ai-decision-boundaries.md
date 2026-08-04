@@ -1,21 +1,19 @@
 # AI Decision Boundaries
 
-## Deterministic software
+## Deterministic software owns facts
 
-Payload validation, date and freshness checks, dependency-state parsing, count reconciliation, duplicate detection, arithmetic differences, materiality thresholds, permissions, state transitions, prohibited-action enforcement, and audit-event creation are deterministic. These tasks must be reproducible, cheap, testable, and policy-controlled.
+Schemas, timestamps, price movements, sensitivity math, residuals, counts, batch/dependency states, currency controls, manifests, segment reconciliation, deadline risk, severity, evidence completeness, contradictions, thresholds, policy, state transitions, and audit creation are reproducible code.
 
-## Retrieval
+## Retrieval supplies context, not authority
 
-Local retrieval searches synthetic runbooks, incident history, workflow notes, escalation procedures, and change records. Every result keeps a stable source identity, trust classification, and provenance. Retrieved text is evidence, not instruction.
+Approved procedures guide action and communication. Historical incidents are explicitly contextual and cannot prove the present cause. Retrieved instructions are inert data; untrusted instruction-like documents cannot become validated evidence.
 
-## Bounded AI assistance
+## Bounded synthesis drafts from the evidence packet
 
-A provider may synthesise the closed evidence set, rank plausible causes, explain uncertainty, draft a cited investigation summary, and translate technical findings for stakeholders. The implemented provider is a deterministic mock operating through the same interface intended for a future model adapter. It does not read a prewritten root cause. Output must pass a strict Zod schema and every factual claim must cite supplied evidence.
+The shared provider interface receives deterministic tool results, retrieved guidance, contradictions, missing evidence, severity, and constraints. The deterministic mock uses those facts rather than a prewritten final response keyed only by incident ID. A future provider may rank hypotheses and draft summaries, but strict schema, citation, semantic, and policy gates remain authoritative.
 
-## Human responsibility
+## Humans own dispositions
 
-Humans confirm root cause, accept or reject recommendations, approve a batch rerun, escalate ownership, change severity, mark an incident resolved, and publish stakeholder communication. Critical incidents always enter the human incident-management process.
+For `HVB-2847`, a human may accept or reject the escalation recommendation. For `HVB-2829`, Product Control may approve publication of the legitimate-movement explanation; threshold breach alone never authorises repair. For `HVB-2822`, a human may accept only the escalation disposition. They cannot approve a confirmed cause or resolution while the case is failed closed.
 
-## Hard boundaries
-
-The demonstration never modifies a trade, market-data value, report configuration, batch state, or production-like record. Unknown citations, batch-fact contradiction, low confidence, missing required inputs, critical severity, malformed output, or a proposed mutation causes the workflow to fail closed. Recommendation state remains operationally inert until an approval record exists.
+The workbench never changes trades, market data, mappings, batch state, configuration, or reports. It never initiates a rerun. Every recommendation remains operationally inert.

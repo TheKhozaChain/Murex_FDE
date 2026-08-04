@@ -1,7 +1,7 @@
 import { localDocuments, type LocalDocument } from "../../data/runbooks/documents";
-import type { RetrievalResult } from "../domain/models";
+import type { ExecutableIncidentId, RetrievalResult } from "../domain/models";
 
-const injectionPatterns = [/ignore previous instructions/i, /mark the incident resolved/i, /change the .* rate directly/i];
+const injectionPatterns = [/ignore previous instructions/i, /mark the .* resolved/i, /change the .* rate directly/i, /confirm .* root cause/i];
 const stopWords = new Set(["the", "and", "for", "with", "from", "this", "that", "report"]);
 
 export function tokenize(value: string): string[] {
@@ -31,6 +31,11 @@ export function rankDocuments(query: string, documents: LocalDocument[] = localD
     .slice(0, limit);
 }
 
-export function retrieveGuidance(): RetrievalResult[] {
-  return rankDocuments("stale FX USD/JPY market data risk exposure report distribution hold escalation approval");
+const queries: Record<ExecutableIncidentId, string> = {
+  "HVB-2847": "stale FX USD/JPY market data risk exposure report distribution hold escalation approval",
+  "HVB-2829": "commodity P&L explain sensitivity carry trades residual tolerance materiality stakeholder Product Control no remediation",
+  "HVB-2822": "critical regulatory report timeout source manifest segments mapping validation incident commander escalation",
+};
+export function retrieveGuidance(incidentId: ExecutableIncidentId = "HVB-2847"): RetrievalResult[] {
+  return rankDocuments(queries[incidentId], localDocuments, incidentId === "HVB-2822" ? 6 : 5);
 }
