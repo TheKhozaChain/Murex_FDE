@@ -8,14 +8,32 @@ Murex FDE Workbench is a portfolio application showing how a Forward Deployed En
 
 **[Open the Murex FDE Workbench →](https://murex-fde-workbench.thekhoza.chatgpt.site)**
 
-No setup, credentials, or model API key is required. For a concise reviewer journey, use **Demo launcher** to run `HVB-2847`, `HVB-2829`, and `HVB-2822`: diagnose a genuine fault, explain a legitimate movement without remediation, and fail closed under critical uncertainty.
+No setup, credentials, or model API key is required. For the flagship demonstration, open `HVB-2847` and follow the nine-stage workflow from stale-FX incident to deterministically validated closure. **Demo launcher → Start one-click tour** remains available as a shorter orientation across all three executable cases.
+
+## Flagship scenario: HVB-2847
+
+`HVB-2847` is a synthetic Daily Market Risk exception: APAC FX delta moved 18.4%, AUD 12.8m of exposure is concentrated in USD/JPY-sensitive positions, and report distribution is held. The valuation batch completed, but deterministic freshness evidence shows that the USD/JPY observation predates the required boundary. This demonstrates a central production-support judgment: successful downstream processing does not prove data completeness or freshness.
+
+The cited recommendation proposes a single allow-listed action: `refresh_fx_market_data_and_rerun_risk_controls`. A reviewer must approve the current recommendation version and evidence snapshot. The action layer then rechecks citations, policy, evidence completeness, confidence, allow-list, source confirmation, distribution hold, and idempotency before it can simulate refreshing the isolated FX input and rerunning only the affected APAC controls.
+
+Execution creates fresh deterministic evidence for timestamp freshness, the scoped risk rerun, population, reconciliation, and report-distribution state. The provider cannot declare success. `RESOLVED` is produced only by `deterministic_resolution_policy` when all five controls pass. A validation failure leaves distribution held, sets the run to `requires_escalation`, and records the failed controls.
+
+### What this demo proves
+
+- **Murex and production-support thinking:** a completed batch is separated from input freshness; affected exposure, movement concentration, source ownership, rerun scope, reconciliation, and report-distribution controls all matter.
+- **Agentic AI engineering:** an explicit orchestrator gathers evidence, retrieves trusted guidance, validates cited synthesis, applies policy, enforces an action allow-list, gathers post-action evidence, and manages deterministic state transitions.
+- **Enterprise governance:** uncertainty remains visible, untrusted retrieval cannot authorise action, consequential execution is approval-gated and scope-bound, rejection is safe, and closure depends on validation rather than a successful command.
+
+### Why this is not a chatbot
+
+The user does not ask an unconstrained model for an answer. Typed inputs run through deterministic tools; retrieval results retain trust and provenance; synthesis must conform to a schema and cite executed evidence; policy can fail closed; an accountable reviewer controls the action boundary; the simulator enforces the approved scope; and every transition is persisted. The model drafts a bounded assessment inside a controlled case workflow—it does not own facts, permissions, execution, or closure.
 
 ## What the project demonstrates
 
 - Discovery of the real reporting process, including stakeholder conflicts and operating incentives
 - Explicit decisions about where deterministic software, AI assistance, and human judgment belong
 - Three executable, persisted investigations and two clearly identified previews
-- A shared architecture that handles stale market data, legitimate P&L movement, and contradictory critical evidence
+- A shared architecture that handles stale market data, legitimate P&L movement, and a critical incident that progresses from contradictory evidence to approved, validated synthetic recovery
 - Evidence lineage, uncertainty, fail-closed behavior, approval gates, audit events, and safe observability
 - A synthetic evaluation dashboard and transparent, conservative value model
 - Role-aware views for support analysts, implementation engineers, and programme sponsors
@@ -37,11 +55,13 @@ flowchart LR
   R --> S
   S --> G[Schema + Guardrail Gate]
   G --> H[Human Approval]
-  H --> A[Audit + Evaluation]
+  H --> X[Scope-bound recovery simulator]
+  X --> V[Post-action validation]
+  V --> A[Audit + Evaluation]
   G -. fail closed .-> E[Escalation]
 ```
 
-The demo is TypeScript-first and local-first. A typed scenario registry selects structured input and deterministic adapters—not a final answer. `HVB-2847` derives a stale timestamp and affected exposure; `HVB-2829` derives its market/sensitivity/carry/new-trade P&L explain and passing controls; `HVB-2822` derives missing evidence, competing hypotheses, deadline risk, and a failed-closed disposition. All three share retrieval, provider interface, citation/fact validation, policy, D1 persistence, approval, audit, trace, APIs, and evaluation. Two other narratives remain non-executable previews.
+The demo is TypeScript-first and local-first. A typed scenario registry selects structured input and deterministic adapters—not a final answer. `HVB-2847` derives a stale timestamp and affected exposure, then continues through allow-listed recovery and deterministic validation; `HVB-2829` derives its market/sensitivity/carry/new-trade P&L explain and passing controls; `HVB-2822` first derives missing evidence, competing hypotheses, and deadline risk, then expands the evidence packet to support a scoped recovery. All three share retrieval, provider interface, citation/fact validation, policy, D1 persistence, approval, audit, trace, APIs, and evaluation. The two recovery-capable scenarios use the same simulator contract and have no production connectivity.
 
 ## Local demo
 
@@ -69,11 +89,11 @@ The local Cloudflare preview uses the `DB` D1 binding. `npm run db:reset` recrea
 
 ## Evaluation
 
-The evaluation screen runs `GOLDEN-HVB-2847-v1`, `GOLDEN-HVB-2829-v1`, and `GOLDEN-HVB-2822-v1` through the same workflow used by the UI and persists their run IDs and measured results. Each case scores twelve dimensions covering deterministic facts, classification, cause, grounding, citations, action, prohibited actions, escalation, uncertainty, fail-closed behavior, summary, and policy. The 30-case suite is explicitly roadmap.
+The evaluation screen runs `GOLDEN-HVB-2847-v1`, `GOLDEN-HVB-2829-v1`, and `GOLDEN-HVB-2822-v1` through the same workflow used by the UI and persists their run IDs and measured results. Each case scores seventeen dimensions: the original twelve investigation checks plus action allow-list, preconditions, post-action evidence, deterministic resolution, and remediation-audit completeness. The `HVB-2847` golden case executes the full happy path. Negative-path integration tests cover missing and stale approval, disallowed action, duplicate execution, validation failure, and invalid citation/policy state. The 30-case suite is explicitly roadmap.
 
 ## Security model
 
-- No production connectivity or data-mutation tool exists
+- No production connectivity exists; the only write-like capabilities are incident-specific deterministic simulations for `HVB-2847` and `HVB-2822`
 - Closed synthetic evidence set with source IDs and trust metadata
 - Structured outputs, confidence thresholds, and fail-closed critical handling
 - Explicit analyst approval before operational disposition

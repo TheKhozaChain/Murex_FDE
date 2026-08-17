@@ -1,7 +1,7 @@
 import type { ApprovalScope, CitationValidation, IncidentInput, PolicyDecision, Recommendation, ToolExecution } from "../domain/models";
 
 export function applySafetyPolicy(input: { investigationId: string; incident: IncidentInput; tools: ToolExecution[]; recommendation: Recommendation | null; citationValidation: CitationValidation; now: string }): PolicyDecision {
-  const evidenceComplete = input.tools.find(tool => tool.toolName === "evidence.completeness")?.derivedFacts.complete === true; const malformed = input.recommendation === null; const confidence = input.recommendation?.confidence ?? 0;
+  const evidenceComplete = input.tools.findLast(tool => tool.toolName === "evidence.completeness")?.derivedFacts.complete === true; const malformed = input.recommendation === null; const confidence = input.recommendation?.confidence ?? 0;
   const directMutation = Boolean(input.recommendation && /^(?!.*(?:do not|no )).*(?:modify|overwrite|change|repair).*(?:market data|rate|trade|data)/i.test(input.recommendation.recommendedNextAction));
   const rules = [
     { rule: "citation_validation", passed: input.citationValidation.valid, detail: input.citationValidation.valid ? "Every citation resolves to executed evidence or approved retrieval." : input.citationValidation.errors.join("; ") },
@@ -16,15 +16,22 @@ export function applySafetyPolicy(input: { investigationId: string; incident: In
     rules.push({ rule: "confidence_threshold", passed: confidence >= 70, detail: confidence >= 70 ? "Confidence meets the review threshold." : "Confidence is below the review threshold." });
   } else if (input.incident.id === "HVB-2822") {
     const contradiction = input.tools.find(tool => tool.toolName === "evidence.contradiction")?.derivedFacts.conflictingHypotheses === true; const populationUnknown = input.tools.find(tool => tool.toolName === "source.segments")?.derivedFacts.populationEstablished !== true; const critical = input.incident.severity === "Critical"; const lowConfidence = confidence < input.incident.policies.minimumConfidence;
-    rules.push({ rule: "critical_ambiguity_fail_closed", passed: false, detail: `Fail closed required: critical=${critical}, evidenceMissing=${!evidenceComplete}, competingHypotheses=${contradiction}, populationUnknown=${populationUnknown}, lowConfidence=${lowConfidence}.` });
-    rules.push({ rule: "unconfirmed_root_cause", passed: input.recommendation?.outcome === "unconfirmed_critical_cause", detail: "Only an unconfirmed root-cause disposition is safe." });
+    const supplementalComplete = input.tools.some(tool => tool.toolName === "interface.delivery") && evidenceComplete;
+    if (supplementalComplete) {
+      const supportedCause = input.recommendation?.outcome === "upstream_interface_delivery_failure" && confidence >= input.incident.policies.minimumConfidence;
+      rules.push({ rule: "critical_evidence_threshold", passed: supportedCause, detail: supportedCause ? "Independent current evidence supports a probable cause above the configured threshold." : "A critical remediation cannot proceed without a supported cause." });
+      rules.push({ rule: "scoped_recovery_only", passed: !/full (?:batch|chain) rerun/i.test(input.recommendation?.recommendedNextAction ?? "") || /do not rerun the full chain/i.test(input.recommendation?.recommendedNextAction ?? ""), detail: "Only the documented, scoped recovery may be approved." });
+    } else {
+      rules.push({ rule: "critical_ambiguity_fail_closed", passed: false, detail: `Fail closed required: critical=${critical}, evidenceMissing=${!evidenceComplete}, competingHypotheses=${contradiction}, populationUnknown=${populationUnknown}, lowConfidence=${lowConfidence}.` });
+      rules.push({ rule: "unconfirmed_root_cause", passed: input.recommendation?.outcome === "unconfirmed_critical_cause", detail: "Only an unconfirmed root-cause disposition is safe." });
+    }
   } else {
     rules.push({ rule: "confidence_threshold", passed: confidence >= 70, detail: confidence >= 70 ? "Confidence meets the review threshold." : "Confidence is below the review threshold." });
     rules.push({ rule: "critical_auto_resolution", passed: input.incident.severity !== "Critical", detail: input.incident.severity === "Critical" ? "Critical incidents cannot be automatically resolved." : "Incident is not critical." });
   }
   rules.push({ rule: "operational_effect", passed: true, detail: "Recommendations have no operational effect before approval." });
-  const passed = rules.every(rule => rule.passed); const permittedApprovalScope: ApprovalScope = input.incident.id === "HVB-2822" ? "escalation_disposition" : "recommendation";
-  return { investigationId: input.investigationId, result: passed ? "approval_required" : "fail_closed", passed, rules, prohibitedActions: ["modify_market_data", "modify_trade", "automatic_batch_rerun", "automatic_resolution", ...(input.incident.id === "HVB-2829" ? ["unnecessary_remediation"] : []), ...(input.incident.id === "HVB-2822" ? ["confirmed_resolution", "assert_unconfirmed_cause"] : [])], approvalRequired: true, permittedApprovalScope, operationalEffect: "none", decidedAt: input.now };
+  const passed = rules.every(rule => rule.passed); const permittedApprovalScope: ApprovalScope = input.incident.id === "HVB-2822" && !passed ? "escalation_disposition" : "recommendation";
+  return { investigationId: input.investigationId, result: passed ? "approval_required" : "fail_closed", passed, rules, prohibitedActions: ["modify_market_data", "modify_trade", "automatic_batch_rerun", "automatic_resolution", ...(input.incident.id === "HVB-2829" ? ["unnecessary_remediation"] : []), ...(input.incident.id === "HVB-2822" && !passed ? ["confirmed_resolution", "assert_unconfirmed_cause"] : []), ...(input.incident.id === "HVB-2822" && passed ? ["full_chain_rerun", "direct_datamart_edit", "close_before_validation"] : [])], approvalRequired: true, permittedApprovalScope, operationalEffect: "none", decidedAt: input.now };
 }
 
 export function canApprove(policy: PolicyDecision, status: string, existingApproval: boolean, decision: "approved" | "rejected" = "approved", scope: ApprovalScope = "recommendation"): { allowed: boolean; reason: string } {

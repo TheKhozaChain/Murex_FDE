@@ -26,13 +26,19 @@ export function validateRecommendation(raw: unknown, context: InvestigationConte
   }
 
   if (context.incident.id === "HVB-2822") {
-    if (recommendation.outcome !== "unconfirmed_critical_cause" && recommendation.outcome !== "insufficient_evidence") errors.push("Critical contradictory evidence requires an unconfirmed outcome.");
-    if (/(?:\bconfirmed\b|root cause (?:is|was)|caused by)[^.]{0,35}timeout|timeout[^.]{0,35}(?:\bconfirmed cause\b|caused)/i.test(combined)) errors.push("Recommendation incorrectly confirms timeout as root cause.");
-    if (/(?:\bconfirmed\b|root cause (?:is|was)|caused by)[^.]{0,35}mapping defect|mapping defect[^.]{0,35}(?:\bconfirmed cause\b|caused)/i.test(combined)) errors.push("Recommendation incorrectly confirms a mapping defect as root cause.");
+    const supplementalComplete = context.toolExecutions.some(item => item.toolName === "interface.delivery") && context.toolExecutions.findLast(item => item.toolName === "evidence.completeness")?.derivedFacts.complete === true;
+    if (!supplementalComplete) {
+      if (recommendation.outcome !== "unconfirmed_critical_cause" && recommendation.outcome !== "insufficient_evidence") errors.push("Critical contradictory evidence requires an unconfirmed outcome.");
+      if (/(?:\bconfirmed\b|root cause (?:is|was)|caused by)[^.]{0,35}timeout|timeout[^.]{0,35}(?:\bconfirmed cause\b|caused)/i.test(combined)) errors.push("Recommendation incorrectly confirms timeout as root cause.");
+      if (/(?:\bconfirmed\b|root cause (?:is|was)|caused by)[^.]{0,35}mapping defect|mapping defect[^.]{0,35}(?:\bconfirmed cause\b|caused)/i.test(combined)) errors.push("Recommendation incorrectly confirms a mapping defect as root cause.");
+      if (!recommendation.missingEvidence.includes("source_manifest")) errors.push("Recommendation omits the missing source manifest.");
+      if (recommends(recommendation.recommendedNextAction, /(?:rerun|re-run)(?: the)? batch/i)) errors.push("Recommendation proposes a batch rerun before missing evidence is reviewed.");
+    } else {
+      if (recommendation.outcome !== "upstream_interface_delivery_failure") errors.push("Complete interface evidence requires the supported upstream-delivery outcome.");
+      for (const required of ["EV-MANIFEST-RETRIEVED", "EV-INTERFACE-DELIVERY", "EV-MAPPING-PASS", "EV-ROW-COUNT-VARIANCE"]) if (!citedIds.includes(required)) errors.push(`Confirmed interface diagnosis omits ${required}.`);
+      if (!/Liquidity Data Services/i.test(recommendation.escalationPath) || !/Murex Production Support/i.test(recommendation.escalationPath) || !/Regulatory Reporting/i.test(recommendation.escalationPath)) errors.push("Recommendation omits a required recovery owner.");
+    }
     if (/historical[^.]{0,50}(?:proves|confirms|establishes) (?:the )?(?:current )?(?:cause|root cause)/i.test(combined)) errors.push("Historical incident is incorrectly treated as direct proof.");
-    if (!recommendation.missingEvidence.includes("source_manifest")) errors.push("Recommendation omits the missing source manifest.");
-    if (!/Incident Commander/i.test(recommendation.escalationPath) || !/Regulatory Reporting/i.test(recommendation.escalationPath)) errors.push("Recommendation omits the mandatory critical escalation route.");
-    if (recommends(recommendation.recommendedNextAction, /(?:rerun|re-run)(?: the)? batch/i)) errors.push("Recommendation proposes a batch rerun before missing evidence is reviewed.");
   }
   if (!Number.isFinite(recommendation.confidence) || recommendation.confidence < 0 || recommendation.confidence > 100) errors.push("Confidence is outside the allowed range.");
   return { recommendation, validation: { valid: errors.length === 0, errors, checkedEvidenceIds: citedIds } };

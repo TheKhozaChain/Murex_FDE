@@ -14,6 +14,6 @@ The shared provider interface receives deterministic tool results, retrieved gui
 
 ## Humans own dispositions
 
-For `HVB-2847`, a human may accept or reject the escalation recommendation. For `HVB-2829`, Product Control may approve publication of the legitimate-movement explanation; threshold breach alone never authorises repair. For `HVB-2822`, a human may accept only the escalation disposition. They cannot approve a confirmed cause or resolution while the case is failed closed.
+For `HVB-2847`, a human may approve only the current cited recommendation. That enables one allow-listed synthetic action; deterministic preconditions can still reject it, and deterministic post-action controls alone decide `RESOLVED` or `VALIDATION_FAILED`. For `HVB-2829`, Product Control may approve publication of the legitimate-movement explanation; threshold breach alone never authorises repair. For the initial failed-closed `HVB-2822` state, a human cannot approve a confirmed cause or recovery until the missing current evidence is gathered and policy is reassessed.
 
 The workbench never changes trades, market data, mappings, batch state, configuration, or reports. It never initiates a rerun. Every recommendation remains operationally inert.
