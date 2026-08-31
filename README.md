@@ -1,128 +1,132 @@
 # Murex FDE Workbench
 
-**An open-source simulation of AI Forward Deployed Engineering in a capital-markets environment.**
+**Controlled AI-assisted investigation for capital-markets production support**
 
-Murex FDE Workbench is a portfolio application showing how a Forward Deployed Engineer studies, redesigns, deploys, evaluates, and justifies an AI-assisted reporting-exception workflow at fictional **HarbourView Bank**. It is deliberately not a chatbot. The core product is a controlled case workflow in which deterministic services gather facts, retrieval supplies approved guidance, bounded AI synthesises cited recommendations, and an accountable analyst approves or rejects the next action.
+An APAC risk report shows an **18.4% FX movement**. The overnight batch is green, yet its USD/JPY observation is stale. Deterministic calculations identify **AUD 12.8m** in affected exposure, and report distribution remains held.
 
-## Live demonstration
+Murex FDE Workbench demonstrates how a support team could turn that fragmented exception into an evidence-backed case: establish facts, prepare a cited recommendation, apply policy, obtain accountable approval, run only a named simulated action and validate the outcome independently.
 
-**[Open the Murex FDE Workbench →](https://murex-fde-workbench.thekhoza.chatgpt.site)**
+> **Portfolio reference implementation:** All data, institutions, users, documents and actions are fictional or synthetic. The current provider is deterministic. There is no real bank deployment or production Murex connectivity. Enterprise diagrams describe illustrative future architecture.
 
-No setup, credentials, or model API key is required. For the flagship demonstration, open `HVB-2847` and follow the nine-stage workflow from stale-FX incident to deterministically validated closure. **Demo launcher → Start one-click tour** remains available as a shorter orientation across all three executable cases.
+## See the product story
 
-## Flagship scenario: HVB-2847
+**[Read the visual solution overview](docs/solution-overview.md)** for the two-minute enterprise story, authority model, three outcomes, governance gates and deployment journey.
 
-`HVB-2847` is a synthetic Daily Market Risk exception: APAC FX delta moved 18.4%, AUD 12.8m of exposure is concentrated in USD/JPY-sensitive positions, and report distribution is held. The valuation batch completed, but deterministic freshness evidence shows that the USD/JPY observation predates the required boundary. This demonstrates a central production-support judgment: successful downstream processing does not prove data completeness or freshness.
+**[Open the public portfolio simulation](https://murex-fde-workbench.thekhoza.chatgpt.site)** and select `HVB-2847`, or [run the demo locally](#run-locally).
 
-The cited recommendation proposes a single allow-listed action: `refresh_fx_market_data_and_rerun_risk_controls`. A reviewer must approve the current recommendation version and evidence snapshot. The action layer then rechecks citations, policy, evidence completeness, confidence, allow-list, source confirmation, distribution hold, and idempotency before it can simulate refreshing the isolated FX input and rerunning only the affected APAC controls.
+![Flagship APAC FX scenario in six frames](docs/diagrams/presentation/rendered/flagship-six-frame.svg)
 
-Execution creates fresh deterministic evidence for timestamp freshness, the scoped risk rerun, population, reconciliation, and report-distribution state. The provider cannot declare success. `RESOLVED` is produced only by `deterministic_resolution_policy` when all five controls pass. A validation failure leaves distribution held, sets the run to `requires_escalation`, and records the failed controls.
+## What the workbench does
 
-### What this demo proves
+The application models a controlled investigation workflow rather than an open-ended chat:
 
-- **Murex and production-support thinking:** a completed batch is separated from input freshness; affected exposure, movement concentration, source ownership, rerun scope, reconciliation, and report-distribution controls all matter.
-- **Agentic AI engineering:** an explicit orchestrator gathers evidence, retrieves trusted guidance, validates cited synthesis, applies policy, enforces an action allow-list, gathers post-action evidence, and manages deterministic state transitions.
-- **Enterprise governance:** uncertainty remains visible, untrusted retrieval cannot authorise action, consequential execution is approval-gated and scope-bound, rejection is safe, and closure depends on validation rather than a successful command.
+1. **Gather evidence.** Conventional TypeScript tools calculate timestamps, exposure, populations, reconciliations, materiality and batch state.
+2. **Retrieve guidance.** Approved fictional runbooks retain source, version, trust and relevance metadata.
+3. **Prepare a recommendation.** The provider separates facts, hypotheses, uncertainty, risk, action scope, validation and rollback, with citations.
+4. **Validate independently.** Schema, citation, factual, confidence and policy checks can fail closed.
+5. **Require a human decision.** Approval is tied to the exact recommendation version and evidence snapshot.
+6. **Limit execution.** Only an incident-specific synthetic capability can run; arbitrary commands, SQL, generated code and external integrations are unavailable.
+7. **Prove the outcome.** Fresh deterministic controls—not provider confidence—decide whether the case resolves or escalates.
 
-### Why this is not a chatbot
+## What AI assistance can—and cannot—do
 
-The user does not ask an unconstrained model for an answer. Typed inputs run through deterministic tools; retrieval results retain trust and provenance; synthesis must conform to a schema and cite executed evidence; policy can fail closed; an accountable reviewer controls the action boundary; the simulator enforces the approved scope; and every transition is persisted. The model drafts a bounded assessment inside a controlled case workflow—it does not own facts, permissions, execution, or closure.
+AI assistance may organise evidence, propose hypotheses, explain uncertainty and draft a cited recommendation.
 
-## What the project demonstrates
+It does **not** establish source facts, validate its own citations, approve a decision, create an action capability, determine execution scope or mark an incident resolved. Those responsibilities remain with deterministic software, policy controls and accountable people.
 
-- Discovery of the real reporting process, including stakeholder conflicts and operating incentives
-- Explicit decisions about where deterministic software, AI assistance, and human judgment belong
-- Three executable, persisted investigations and two clearly identified previews
-- A shared architecture that handles stale market data, legitimate P&L movement, and a critical incident that progresses from contradictory evidence to approved, validated synthetic recovery
-- Evidence lineage, uncertainty, fail-closed behavior, approval gates, audit events, and safe observability
-- A synthetic evaluation dashboard and transparent, conservative value model
-- Role-aware views for support analysts, implementation engineers, and programme sponsors
+[See the authority matrix](docs/solution-overview.md#5-who-controls-what).
 
-## Screens
+## Three scenarios, three safe outcomes
 
-The current application includes an Engagement Overview/FDE Report, Current-State Workflow Map, Stakeholder Interview Findings, AI Opportunity Matrix, Incident Queue, Incident Detail within the Investigation Workspace, Evidence Viewer, Approval Queue within each case, Evaluation Dashboard and case framing, Observability and Traces, Governance Controls, ROI and Value Dashboard, Architecture and System Boundaries, and Demo Scenario Launcher.
+All executable cases use the same orchestrator, provider contract, validation, policy, approval, audit, persistence and evaluation layers.
 
-> Screenshot assets will be added after the visual design stabilises. The running application is the authoritative demonstration.
+| Scenario | What it demonstrates | Safe outcome |
+| --- | --- | --- |
+| `HVB-2847` — unexpected FX delta | A successful batch used stale USD/JPY data affecting AUD 12.8m exposure | Approve one scoped synthetic recovery, then close only after five controls pass |
+| `HVB-2829` — large commodities P&L | A material AUD 6.1m movement reconciles to market and position effects | Explain the movement, request Product Control review and avoid remediation |
+| `HVB-2822` — liquidity population shortfall | A timeout and similar historical incident do not prove the current cause | First pass: fail closed and gather evidence; scoped recovery becomes available only after evidence expansion and review |
 
-## Architecture
+Two additional incidents in the interface are labelled previews rather than executable workflows.
 
-```mermaid
-flowchart LR
-  U[Support Analyst] --> W[Role-aware Workbench]
-  W --> D[Deterministic Controls]
-  W --> R[Local Retrieval]
-  D --> S[Structured Synthesis]
-  R --> S
-  S --> G[Schema + Guardrail Gate]
-  G --> H[Human Approval]
-  H --> X[Scope-bound recovery simulator]
-  X --> V[Post-action validation]
-  V --> A[Audit + Evaluation]
-  G -. fail closed .-> E[Escalation]
-```
+## Governance and evidence
 
-The demo is TypeScript-first and local-first. A typed scenario registry selects structured input and deterministic adapters—not a final answer. `HVB-2847` derives a stale timestamp and affected exposure, then continues through allow-listed recovery and deterministic validation; `HVB-2829` derives its market/sensitivity/carry/new-trade P&L explain and passing controls; `HVB-2822` first derives missing evidence, competing hypotheses, and deadline risk, then expands the evidence packet to support a scoped recovery. All three share retrieval, provider interface, citation/fact validation, policy, D1 persistence, approval, audit, trace, APIs, and evaluation. The two recovery-capable scenarios use the same simulator contract and have no production connectivity.
+The reference implementation includes:
 
-## Local demo
+- evidence lineage and attributable retrieval;
+- structured recommendation validation;
+- scenario-specific policy and fail-closed behavior;
+- recommendation-version-bound approval;
+- action allow-lists and duplicate-execution protection;
+- post-action evidence and deterministic resolution;
+- persisted audit events and safe traces;
+- three executable golden cases with 17 scored fields each—five remediation fields are non-applicable passes outside `HVB-2847`; and
+- 48 TypeScript tests, a production build and two rendered-output tests.
 
-Requirements: Node.js 22.13 or later.
+Meaningful negative tests reject fabricated citations, unnecessary remediation, historical evidence presented as current proof, missing or stale approval, disallowed or duplicate action and failed validation.
+
+This evidence supports the checked-in synthetic workflow. It does not establish live-model accuracy, production safety, regulatory compliance, operational scale or measured ROI. The [planned 30-case corpus](PLAN.md#evaluation-expectations) is not yet implemented.
+
+## Run locally
+
+Requirements: Node.js 22.13 or later and npm.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the local URL printed by the development server. Start in **Demo launcher**, select a scenario, run the controlled investigation, inspect citations, and record an approval decision.
+Open the local URL printed by the development server. The local Cloudflare preview uses the `DB` D1 binding. Recreate and seed it with:
 
 ```bash
-npm run build
-npm test
-npm run lint
-npm run typecheck
-npm run eval
-npm run eval -- --case HVB-2847
-npm run eval -- --case HVB-2829
-npm run eval -- --case HVB-2822
+npm run db:reset
+npm run db:seed
 ```
 
-The local Cloudflare preview uses the `DB` D1 binding. `npm run db:reset` recreates the checked-in schema and `npm run db:seed` inserts all three structured synthetic inputs. The hosted site owns its D1 resource; no database credentials are required.
+Validate the repository with:
 
-## Evaluation
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run eval
+```
 
-The evaluation screen runs `GOLDEN-HVB-2847-v1`, `GOLDEN-HVB-2829-v1`, and `GOLDEN-HVB-2822-v1` through the same workflow used by the UI and persists their run IDs and measured results. Each case scores seventeen dimensions: the original twelve investigation checks plus action allow-list, preconditions, post-action evidence, deterministic resolution, and remediation-audit completeness. The `HVB-2847` golden case executes the full happy path. Negative-path integration tests cover missing and stale approval, disallowed action, duplicate execution, validation failure, and invalid citation/policy state. The 30-case suite is explicitly roadmap.
+Run one golden case with `npm run eval -- --case HVB-2847`, `HVB-2829` or `HVB-2822`.
 
-## Security model
+## Documentation
 
-- No production connectivity exists; the only write-like capabilities are incident-specific deterministic simulations for `HVB-2847` and `HVB-2822`
-- Closed synthetic evidence set with source IDs and trust metadata
-- Structured outputs, confidence thresholds, and fail-closed critical handling
-- Explicit analyst approval before operational disposition
-- Role boundaries, redacted traces, idempotency, timeouts, retry and step limits
-- Retrieved text is treated as untrusted evidence, never as executable instruction
+- [Visual solution overview](docs/solution-overview.md) — primary enterprise communication asset
+- [Executive brief](docs/solution-brief/executive-brief.md) — concise stakeholder handout
+- [Scenario walkthrough](docs/solution-brief/scenario-walkthrough.md) — implemented case behavior
+- [Technical brief](docs/solution-brief/technical-brief.md) — components, state transitions, APIs, persistence and tests
+- [Governance and controls](docs/solution-brief/governance-and-controls.md) — controls, evidence and production gaps
+- [Enterprise deployment vision](docs/solution-brief/enterprise-deployment-vision.md) — illustrative adoption path
+- [AI decision boundaries](docs/ai-decision-boundaries.md) and [threat model](docs/threat-model.md) — concise authority and security references
+- [Demo script](docs/demo-script.md), [FDE engagement framing](docs/fde-engagement.md) and [interview talking points](docs/interview-talking-points.md) — portfolio presentation support
+- [Presentation diagrams](docs/diagrams/presentation/) — primary visual set
+- [Technical diagram appendix](docs/diagrams/technical/) — detailed implementation and sequence diagrams
 
-See `docs/threat-model.md` and `docs/ai-decision-boundaries.md`.
+## Repository map
 
-## Limitations
+```text
+app/                     User interface and validated API routes
+data/                    Fictional incidents, guidance and golden cases
+src/deterministic/       Reproducible fact collection
+src/investigation/       Workflow orchestration and validation
+src/policy/              Safety and approval rules
+src/providers/           Synthesis interface and deterministic provider
+src/persistence/         In-memory and D1 repositories
+src/evaluation/          Golden evaluation runner
+tests/                   Unit, integration, security and rendered checks
+docs/                    Solution, technical and governance documentation
+```
 
-- Educational portfolio simulation, not production software or a real platform integration
-- Synthetic scenarios and simulated performance/value metrics
-- Mock synthesis in the default build; external provider adapters are roadmap work
-- Shared public-demo D1 state; demo identity is labelled and is not authentication
-- No production authentication, tenant isolation, production deployment controls, or regulated-record retention implementation
-- Two scenario narratives remain presentation previews rather than executable workflows
+## Current boundaries
 
-## Roadmap
+This is a portfolio simulation, not production software. It has no production authentication, tenant isolation, regulated retention, enterprise monitoring, real-model evaluation or production-safe recovery integration. Synthetic time-saving assumptions are not measured business outcomes.
 
-The detailed checklist is in `PLAN.md`. Near-term work: expand toward 30 golden cases, add provider adapters and authenticated tenant isolation, integrate external evidence sources, and establish production-grade retention and operational controls.
+Murex is a trademark of its respective owner. This independent educational project is not affiliated with or endorsed by Murex or any financial institution. It contains no proprietary source code, client data, production credentials or production connectivity.
 
-## Contributing
+## Contributing and licence
 
-Contributions should preserve the intellectual-property boundary, use synthetic data, add tests for domain behavior, and document any change to AI decision boundaries. Open an issue before adding a provider or a new operational action. A full contributing guide and community templates are planned in the repository hygiene milestone.
-
-## Intellectual-property disclaimer
-
-Murex is a trademark of its respective owner. This project is not affiliated with or endorsed by Murex. All bank names, schemas, workflows, trades, incidents, logs, and reports are fictional. The application is an educational FDE demonstration, not a production Murex integration. It contains no proprietary source code, schemas, screens, documentation, client data, configuration, credentials, or connectivity.
-
-## Licence
-
-MIT — see `LICENSE`.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) and the [MIT licence](LICENSE).

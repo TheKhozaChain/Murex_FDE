@@ -9,7 +9,7 @@
 | Timeout or mapping hypothesis asserted as fact | Current timeout proves occurrence only; current mapping control must be conclusive; semantic validation rejects confirmation claims |
 | Failed-closed result approved as resolution | Approval scope is persisted and policy permits only `escalation_disposition` for `HVB-2822` |
 | Fabricated or contradictory citations | Closed evidence IDs, trusted-document IDs, executed-tool lineage, and deterministic fact checks |
-| Unauthorised production action | Mutation tools do not exist; repair, rerun, and automatic-resolution actions are prohibited and operational effect is always `none` |
+| Unauthorised production action | Production mutation tools do not exist; synthetic recovery is incident-specific, allow-listed, approval-bound and unable to contact external infrastructure |
 | Incomplete audit trail | D1 records run snapshots, normalized evidence, policy, approvals, and append-only ordered audit events |
 
 Automated adversarial coverage includes unknown citations, mutations, malformed output, injected documents, unnecessary remediation, historical-as-proof claims, confirmed timeout/mapping claims, premature rerun, early/duplicate/wrong-scope approval, and audit-copy mutation.
