@@ -7,7 +7,7 @@ const previewUrl = "http://127.0.0.1:4179/";
 let preview;
 
 before(async () => {
-  preview = spawn("npx", ["vinext", "dev", "--port", "4179"], { cwd: new URL("../", import.meta.url), env: { ...process.env, WRANGLER_LOG_PATH: ".wrangler/test.log" }, stdio: "ignore" });
+  preview = spawn("npx", ["vinext", "dev", "--hostname", "127.0.0.1", "--port", "4179"], { cwd: new URL("../", import.meta.url), env: { ...process.env, WRANGLER_LOG_PATH: ".wrangler/test.log" }, stdio: "ignore" });
   for (let attempt = 0; attempt < 80; attempt++) {
     try { const response = await fetch(previewUrl); if (response.ok) return; } catch {}
     await new Promise(resolve => setTimeout(resolve, 100));
