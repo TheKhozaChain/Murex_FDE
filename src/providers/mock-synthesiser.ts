@@ -1,52 +1,89 @@
-import type { InvestigationContext, Recommendation } from "../domain/models";
+import type { InvestigationContext, Recommendation, RetrievalResult } from "../domain/models";
 import type { InvestigationSynthesiser } from "./synthesiser";
 
+const tool = (context: InvestigationContext, name: string) => context.toolExecutions.find(item => item.toolName === name);
+const approved = (context: InvestigationContext, id: string) => context.retrievedDocuments.find(item => item.documentId === id && item.approved && item.trust === "approved_internal");
+const ids = (...documents: Array<RetrievalResult | undefined>) => documents.filter(Boolean).map(item => item!.documentId);
+
 export class DeterministicMockSynthesiser implements InvestigationSynthesiser {
-  readonly name = "mock-deterministic-v1";
+  readonly name = "mock-deterministic-v2";
 
   async synthesise(context: InvestigationContext): Promise<Recommendation> {
-    const freshness = context.toolExecutions.find(tool => tool.toolName === "market_data.freshness");
-    const exposure = context.toolExecutions.find(tool => tool.toolName === "exposure.calculate");
-    const batch = context.toolExecutions.find(tool => tool.toolName === "batch.dependencies");
-    const completeness = context.toolExecutions.find(tool => tool.toolName === "evidence.completeness");
-    const runbook = context.retrievedDocuments.find(document => document.documentId === "RB-17" && document.approved);
-    const escalation = context.retrievedDocuments.find(document => document.documentId === "ESC-03" && document.approved);
-    const distribution = context.retrievedDocuments.find(document => document.documentId === "POL-09" && document.approved);
-    const stale = freshness?.derivedFacts.stale === true;
-    const complete = completeness?.derivedFacts.complete === true;
-    const affectedExposureAud = Number(exposure?.derivedFacts.affectedExposureAud ?? 0);
-    const batchSucceeded = batch?.derivedFacts.batchSucceeded === true;
-    const evidenceReferences = ["EV-MD-FRESHNESS", "EV-AFFECTED-EXPOSURE", "EV-RECONCILIATION", "EV-BATCH-STATUS", ...(runbook ? [runbook.documentId] : [])];
+    if (tool(context, "pnl.residual")) return this.synthesisePnl(context);
+    if (tool(context, "source.manifest")) return this.synthesiseCriticalReport(context);
+    return this.synthesiseMarketData(context);
+  }
 
-    if (!stale || !complete || !runbook || !escalation || !distribution) {
-      return {
-        investigationId: context.toolExecutions[0]?.investigationId ?? "unknown", version: 1, outcome: "insufficient_evidence",
-        candidates: [{ cause: "Root cause cannot be confirmed from the available evidence", evidenceReferences: context.evidence.slice(0, 1).map(item => item.id), confidence: 35, factualClaims: ["Required evidence or approved guidance is incomplete."] }],
-        confidence: 35, uncertaintyExplanation: "The evidence packet is incomplete or does not establish a freshness breach.", contradictoryEvidence: [], missingEvidence: ["approved_guidance_or_freshness_evidence"],
-        recommendedNextAction: "Escalate for manual investigation; do not modify data or distribute the report.", actionEvidenceReferences: context.evidence.slice(0, 1).map(item => item.id),
-        escalationPath: "Production Support", prohibitedActionsDetected: ["modify_market_data"], analystSummary: "Evidence is insufficient; the workflow failed closed.", stakeholderSummary: "The report remains under review while additional evidence is obtained.",
-      };
-    }
+  private synthesiseMarketData(context: InvestigationContext): Recommendation {
+    const freshness = tool(context, "market_data.freshness"); const exposure = tool(context, "exposure.calculate"); const batch = tool(context, "batch.dependencies"); const completeness = tool(context, "evidence.completeness");
+    const runbook = approved(context, "RB-17"); const escalation = approved(context, "ESC-03"); const distribution = approved(context, "POL-09");
+    const stale = freshness?.derivedFacts.stale === true; const complete = completeness?.derivedFacts.complete === true; const affected = Number(exposure?.derivedFacts.affectedExposureAud ?? 0); const batchSucceeded = batch?.derivedFacts.batchSucceeded === true;
+    if (!stale || !complete || !runbook || !escalation || !distribution) return this.insufficient(context, "Production Support", ["approved_guidance_or_freshness_evidence"]);
+    const exposureMillions = (affected / 1_000_000).toFixed(1); const evidenceReferences = ["EV-MD-FRESHNESS", "EV-AFFECTED-EXPOSURE", "EV-RECONCILIATION", "EV-BATCH-STATUS", runbook.documentId];
+    return { investigationId: context.toolExecutions[0].investigationId, version: 1, outcome: "stale_market_data", candidates: [{ cause: "Stale USD/JPY market data in the APAC synthetic source", evidenceReferences, confidence: 92, status: "probable_root_cause", rationale: "The source observation breaches the configured freshness boundary and 93% of the movement is concentrated in USD/JPY-sensitive positions, while the original batch itself completed.", factualClaims: ["The USD/JPY observation predates the configured freshness boundary.", `USD/JPY-sensitive positions have AUD ${exposureMillions}m affected exposure.`, `The valuation batch ${batchSucceeded ? "succeeded" : "did not succeed"}; batch failure is not claimed.`] }], confidence: 92, uncertaintyExplanation: "The stale timestamp and concentrated exposure are established, but the valuation must not be declared wrong until approved source confirmation.", contradictoryEvidence: [], missingEvidence: [], diagnosis: `The Daily Market Risk exception is most consistently explained by a stale USD/JPY observation used by the APAC risk cycle. AUD ${exposureMillions}m of synthetic exposure is affected; the completed batch does not prove data freshness.`, observedFacts: [{ fact: "The USD/JPY observation is older than the configured freshness boundary.", evidenceReferences: ["EV-MD-FRESHNESS"] }, { fact: `USD/JPY-sensitive positions total AUD ${exposureMillions}m and account for 93% of the movement.`, evidenceReferences: ["EV-AFFECTED-EXPOSURE", "EV-RECONCILIATION"] }, { fact: "The APAC valuation batch and dependencies completed successfully.", evidenceReferences: ["EV-BATCH-STATUS"] }], recommendedNextAction: "After Market Data Operations confirms an approved current USD/JPY observation, simulate refreshing the bounded synthetic FX input, rerun only the affected APAC market-data and risk controls, reconcile the output, and release the report hold only if every post-action control passes.", actionEvidenceReferences: ["EV-MD-FRESHNESS", "EV-AFFECTED-EXPOSURE", runbook.documentId, distribution.documentId, escalation.documentId], escalationPath: "Market Data Operations + Market Risk Control + Murex Production Support", risk: "Using an unapproved rate or rerunning an unnecessarily broad cycle could produce inconsistent valuations, conceal the original exception, or distribute an unvalidated risk report.", blastRadius: "The synthetic USD/JPY APAC market-data set, affected APAC risk calculation, Daily Market Risk reconciliation, and report-distribution hold.", preconditions: ["Market Data Operations source confirmation is present.", "The refreshed observation is inside the configured freshness boundary.", "Recommendation v1 citations and policy remain valid.", "Daily Market Risk distribution remains held.", "No prior remediation execution exists for this investigation."], validationPlan: ["Recheck USD/JPY freshness against policy.", "Confirm the scoped APAC risk rerun and dependencies succeeded.", "Reconcile the affected population and movement control.", "Confirm the report reflects the refreshed observation.", "Release the distribution hold only after all controls pass."], rollbackPlan: "Restore the synthetic pre-action market-data snapshot, keep report distribution held, and escalate to Market Data Operations and Market Risk Control for manual recovery.", confidenceRationale: "High (92%): deterministic timestamp, exposure, concentration, batch, and reconciliation evidence converge. Source confirmation is still a mandatory action precondition.", prohibitedActionsDetected: ["modify_market_data", "unapproved_rate_injection", "unscoped_full_batch_rerun", "release_before_validation"], analystSummary: `A deterministic freshness check identified stale USD/JPY data. AUD ${exposureMillions}m exposure is affected. The batch succeeded. Escalate to Market Data Operations and request approval for a bounded refresh-and-rerun simulation; do not alter protected records directly.`, stakeholderSummary: `Daily Market Risk is held because stale USD/JPY data affects AUD ${exposureMillions}m exposure. A scoped synthetic refresh and validation may proceed only after accountable approval and source confirmation.` };
+  }
 
-    const exposureMillions = (affectedExposureAud / 1_000_000).toFixed(1);
+  private synthesisePnl(context: InvestigationContext): Recommendation {
+    const residual = tool(context, "pnl.residual"); const population = tool(context, "trade.population"); const timestamp = tool(context, "valuation.timestamp"); const currency = tool(context, "currency_conversion.control"); const batch = tool(context, "batch.dependencies");
+    const explain = approved(context, "PNL-11"); const policy = approved(context, "POL-PNL-04"); const commentary = approved(context, "COMMS-06");
+    const controlsPass = residual?.derivedFacts.withinTolerance === true && population?.derivedFacts.complete === true && timestamp?.derivedFacts.valid === true && currency?.derivedFacts.passed === true && batch?.derivedFacts.batchSucceeded === true;
+    if (!controlsPass || !explain || !policy || !commentary) return this.insufficient(context, "Product Control", ["complete_P&L_controls"]);
+    const explained = Number(residual.derivedFacts.explainedPnlAud); const residualAud = Number(residual.derivedFacts.residualAud); const references = ["EV-PNL-MARKET-MOVE", "EV-PNL-SENSITIVITY", "EV-PNL-RESIDUAL", "EV-TRADE-POPULATION", "EV-VALUATION-TIMESTAMP", "EV-CURRENCY-CONTROL", "EV-BATCH-STATUS", explain.documentId];
+    return { investigationId: context.toolExecutions[0].investigationId, version: 1, outcome: "legitimate_business_movement", candidates: [{ cause: "Legitimate crude market and position effects", evidenceReferences: references, confidence: 94, factualClaims: [`Market movement, sensitivity, carry, and new trades explain AUD ${(explained / 1_000_000).toFixed(1)}m.`, `Residual P&L is AUD ${residualAud.toFixed(2)}, within tolerance.`, "Trade population, valuation timestamp, currency conversion, batch, and dependencies passed."] }], confidence: 94, uncertaintyExplanation: "The movement is fully explained within tolerance. Product Control still owns business review and publication approval.", contradictoryEvidence: [], missingEvidence: [], recommendedNextAction: "Request Product Control review and, after human approval, publish the evidence-cited stakeholder explanation. Do not repair data or rerun the batch.", actionEvidenceReferences: ["EV-PNL-RESIDUAL", "EV-TRADE-POPULATION", "EV-VALUATION-TIMESTAMP", "EV-CURRENCY-CONTROL", policy.documentId, commentary.documentId], escalationPath: "Product Control", prohibitedActionsDetected: ["unnecessary_data_repair", "unnecessary_batch_rerun", "technical_escalation_without_fault"], analystSummary: `The AUD ${(explained / 1_000_000).toFixed(1)}m commodities P&L movement is explained by genuine crude market movement, position sensitivity, carry, and new trades. Residual is within tolerance and all operational controls passed. No remediation or batch rerun is required; Product Control review remains appropriate.`, stakeholderSummary: `The material commodities P&L movement is explained by market and position effects, with complete populations and successful controls. Following Product Control approval, the cited explanation may be published; no operational repair is required.` };
+  }
+
+  private synthesiseCriticalReport(context: InvestigationContext): Recommendation {
+    if (tool(context, "interface.delivery")) return this.synthesiseConfirmedInterfaceFailure(context);
+    const manifest = tool(context, "source.manifest"); const segments = tool(context, "source.segments"); const timeout = tool(context, "source.timeout"); const mapping = tool(context, "mapping.validation"); const contradiction = tool(context, "evidence.contradiction"); const deadline = tool(context, "regulatory.deadline");
+    const escalation = approved(context, "REG-01"); const manifestGuide = approved(context, "SRC-08"); const timeoutGuide = approved(context, "TIMEOUT-05"); const mappingGuide = approved(context, "MAP-12");
+    const missing = [...new Set([...(manifest?.derivedFacts.complete === false ? ["source_manifest"] : []), ...(segments?.derivedFacts.populationEstablished === false ? ["population_completeness"] : []), ...(mapping?.derivedFacts.conclusive === false ? ["conclusive_mapping_validation"] : [])])];
+    const competing = contradiction?.derivedFacts.conflictingHypotheses === true; const atRisk = deadline?.derivedFacts.atRisk === true; const references = ["EV-SOURCE-MANIFEST", "EV-SEGMENT-RECONCILIATION", "EV-SOURCE-TIMEOUT", "EV-MAPPING-VALIDATION", "EV-EVIDENCE-CONTRADICTION", "EV-REGULATORY-DEADLINE", "HI-REG-MAPPING", ...ids(timeoutGuide, mappingGuide)];
+    return { investigationId: context.toolExecutions[0].investigationId, version: 1, outcome: "unconfirmed_critical_cause", candidates: [{ cause: "Root cause unconfirmed: current timeout and historical mapping similarity are competing hypotheses", evidenceReferences: references, confidence: 41, factualClaims: [`A ${Number(timeout?.derivedFacts.timeoutSeconds)}s source-reader timeout occurred, but it does not prove cause.`, "Current mapping validation is inconclusive; historical mapping similarity is not current proof.", `Population completeness is unestablished and the internal sign-off window ${atRisk ? "is" : "is not"} at risk.`] }], confidence: 41, uncertaintyExplanation: "Critical severity, a missing manifest, incomplete segments, inconclusive mapping evidence, and competing explanations prohibit root-cause confirmation.", contradictoryEvidence: competing ? ["current_timeout_observation_vs_historical_mapping_similarity"] : [], missingEvidence: missing, recommendedNextAction: "Obtain and review the missing source manifest, then escalate the disposition to the Incident Commander and Regulatory Reporting. Do not rerun the batch or assert timeout or mapping defect as confirmed.", actionEvidenceReferences: ["EV-SOURCE-MANIFEST", "EV-SEGMENT-RECONCILIATION", "EV-REGULATORY-DEADLINE", ...(escalation ? [escalation.documentId] : []), ...(manifestGuide ? [manifestGuide.documentId] : [])], escalationPath: "Incident Commander + Regulatory Reporting", prohibitedActionsDetected: ["confirmed_resolution", "automatic_batch_rerun", "assert_timeout_as_cause", "assert_mapping_defect_as_cause"], analystSummary: "Root cause is unconfirmed. Evidence is insufficient and contradictory: the timeout is current evidence, the mapping defect is historical context, the source manifest is missing, and population completeness cannot be established. Escalate to the Incident Commander and Regulatory Reporting; do not rerun the batch.", stakeholderSummary: "The critical regulatory report is delayed and its cause remains unconfirmed. The source manifest must be obtained while the Incident Commander and Regulatory Reporting manage the at-risk sign-off window." };
+  }
+
+  private synthesiseConfirmedInterfaceFailure(context: InvestigationContext): Recommendation {
+    const interfaceDelivery = tool(context, "interface.delivery");
+    const population = tool(context, "population.baseline");
+    const incident = context.incident.id === "HVB-2822" ? context.incident : null;
+    const recovery = approved(context, "LCR-REC-07");
+    const control = approved(context, "PROD-CTRL-02");
+    const references = ["EV-MANIFEST-RETRIEVED", "EV-INTERFACE-DELIVERY", "EV-MAPPING-PASS", "EV-CONFIG-CHANGES", "EV-ROW-COUNT-VARIANCE", "EV-SOURCE-TIMEOUT", "EV-SEGMENT-RECONCILIATION"];
+    const missingSegment = String(interfaceDelivery?.derivedFacts.missingSegment ?? "segment 14");
+    const missingRows = Number(population?.derivedFacts.missingRows ?? 0);
     return {
-      investigationId: context.toolExecutions[0].investigationId, version: 1, outcome: "stale_market_data",
-      candidates: [{
-        cause: `Stale USD/JPY market data in the APAC synthetic source`, evidenceReferences, confidence: 92,
-        factualClaims: [
-          "The USD/JPY observation predates the configured freshness boundary.",
-          `USD/JPY-sensitive positions have AUD ${exposureMillions}m affected exposure.`,
-          `The valuation batch ${batchSucceeded ? "succeeded" : "did not succeed"}; the evidence does not establish a batch failure.`,
-        ],
-      }],
-      confidence: 92,
-      uncertaintyExplanation: "The stale timestamp and concentrated exposure are established, but the valuation itself must not be declared wrong until an approved refresh and rerun confirm the effect.",
+      investigationId: context.toolExecutions[0].investigationId, version: 2, outcome: "upstream_interface_delivery_failure",
+      candidates: [
+        { cause: `Upstream non-delivery of ${missingSegment}`, evidenceReferences: references, confidence: 91, status: "probable_root_cause", rationale: "The authoritative manifest requires 14 segments, the transfer ledger shows the absent segment was never delivered, and the observed 13-of-14 Murex population follows directly.", factualClaims: [`${missingSegment} was not delivered to the synthetic Murex landing zone.`, `${missingRows.toLocaleString("en-AU")} rows are absent from the partial Datamart population.`, "The current mapping validation passed and no relevant configuration change exists."] },
+        { cause: "Current currency mapping defect", evidenceReferences: ["EV-MAPPING-PASS", "HI-REG-MAPPING"], confidence: 4, status: "ruled_out", rationale: "Current mapping validation passed; historical similarity is context, not proof.", factualClaims: ["The historical incident involved mapping, but the current control passed."] },
+        { cause: "Murex source-reader infrastructure failure", evidenceReferences: ["EV-SOURCE-TIMEOUT", "EV-INTERFACE-DELIVERY"], confidence: 5, status: "ruled_out", rationale: "The reader timeout is a downstream symptom of waiting for an input that the transfer ledger shows was not delivered.", factualClaims: ["A timeout occurred, but the missing file predates the timeout at the upstream transfer boundary."] },
+      ],
+      confidence: 91,
+      uncertaintyExplanation: "The exact upstream transport reason for non-delivery is outside this Workbench and remains owned by Liquidity Data Services; the location and operational cause of the Murex population shortfall are established.",
       contradictoryEvidence: [], missingEvidence: [],
-      recommendedNextAction: "Escalate the stale USD/JPY observation to Market Data Operations and recommend holding Daily Market Risk distribution pending human approval and source confirmation.",
-      actionEvidenceReferences: ["EV-MD-FRESHNESS", "EV-AFFECTED-EXPOSURE", "RB-17", "POL-09", "ESC-03"],
-      escalationPath: "Market Data Operations", prohibitedActionsDetected: ["modify_market_data"],
-      analystSummary: `A deterministic freshness check identified stale USD/JPY data. AUD ${exposureMillions}m exposure is affected. The batch succeeded, so batch failure is not claimed. Escalate to Market Data Operations and request approval to hold report distribution; do not modify market data.`,
-      stakeholderSummary: `Daily Market Risk is under review because the USD/JPY input is stale and affects AUD ${exposureMillions}m of exposure. Market Data Operations has been identified as the escalation path. Distribution should be held only after accountable approval.`,
+      diagnosis: `The Liquidity Coverage Pack is delayed because ${missingSegment} did not reach the synthetic Murex landing zone. The source reader then timed out with only 13 of 14 segments, leaving ${missingRows.toLocaleString("en-AU")} expected Datamart rows absent.`,
+      observedFacts: [
+        { fact: "The manifest requires 14 source segments; only 13 were received.", evidenceReferences: ["EV-MANIFEST-RETRIEVED", "EV-SEGMENT-RECONCILIATION"] },
+        { fact: `${missingSegment} has transfer status NOT_DELIVERED and no landing-zone receipt.`, evidenceReferences: ["EV-INTERFACE-DELIVERY"] },
+        { fact: "Current mapping passed and no relevant configuration change was recorded.", evidenceReferences: ["EV-MAPPING-PASS", "EV-CONFIG-CHANGES"] },
+        { fact: "The partial row count is outside the recent business-volume range.", evidenceReferences: ["EV-ROW-COUNT-VARIANCE"] },
+      ],
+      recommendedNextAction: `After Liquidity Data Services restores ${missingSegment}, simulate a scoped re-ingestion of that segment, resume the source-reader and downstream Datamart chain from the documented recovery point, then rerun population and report controls. Do not rerun the full chain before checksum, duplicate-key, and business-date preconditions pass.`,
+      actionEvidenceReferences: ["EV-INTERFACE-DELIVERY", "EV-MANIFEST-RETRIEVED", "EV-ROW-COUNT-VARIANCE", ...(recovery ? [recovery.documentId] : []), ...(control ? [control.documentId] : [])],
+      escalationPath: "Liquidity Data Services + Murex Production Support + Regulatory Reporting",
+      risk: "An unscoped rerun could duplicate rows, mix business dates, mask the original shortfall, or cause an inconsistent downstream report.",
+      blastRadius: "Synthetic liquidity source staging, the LCR Datamart chain, population reconciliation, report rendering, and the internal Regulatory Reporting sign-off workflow.",
+      preconditions: ["Upstream owner confirms the missing segment is complete and final.", "Checksum, filename, business date, and schema match the manifest.", "No duplicate segment or partial rows exist in staging.", "Regulatory Reporting keeps distribution on hold."],
+      validationPlan: ["Confirm 14 of 14 segments received.", `Reconcile Datamart row count to ${incident?.supplementalEvidence.expectedRows.toLocaleString("en-AU")} expected rows.`, "Require mapping and duplicate-key controls to pass.", "Render the Liquidity Coverage Pack and obtain business-owner sign-off.", "Clear the SLA alert only after every downstream control passes."],
+      rollbackPlan: "Stop the resumed chain, quarantine the re-ingested segment, restore the synthetic pre-action staging snapshot, and keep the incident open for manual recovery.",
+      confidenceRationale: "High (91%): independent manifest, transfer-ledger, population, mapping, and change evidence converge. Confidence is not 100% because the upstream transport defect itself is outside the simulated boundary.",
+      prohibitedActionsDetected: ["automatic_full_batch_rerun", "bypass_business_signoff", "direct_datamart_edit", "close_before_validation"],
+      analystSummary: `The probable root cause is upstream non-delivery of ${missingSegment}, not a Murex mapping defect. The missing input explains the 13-of-14 population, timeout, and ${missingRows.toLocaleString("en-AU")}-row Datamart shortfall. A scoped, approved recovery is safer than a full rerun.`,
+      stakeholderSummary: "The Liquidity Coverage Pack is held because one upstream segment did not arrive. Evidence now supports a controlled recovery, subject to Production Support approval and full downstream reconciliation before sign-off.",
     };
+  }
+
+  private insufficient(context: InvestigationContext, path: string, missingEvidence: string[]): Recommendation {
+    const references = context.evidence.slice(0, 1).map(item => item.id);
+    return { investigationId: context.toolExecutions[0]?.investigationId ?? "unknown", version: 1, outcome: "insufficient_evidence", candidates: [{ cause: "Root cause cannot be confirmed from the available evidence", evidenceReferences: references, confidence: 35, factualClaims: ["Required deterministic evidence or approved guidance is incomplete."] }], confidence: 35, uncertaintyExplanation: "The evidence packet is incomplete.", contradictoryEvidence: [], missingEvidence, recommendedNextAction: "Escalate for manual investigation; do not modify data, rerun a batch, or publish the report.", actionEvidenceReferences: references, escalationPath: path, prohibitedActionsDetected: ["automatic_batch_rerun", "modify_data"], analystSummary: "Evidence is insufficient; the workflow failed closed.", stakeholderSummary: "The report remains under review while additional evidence is obtained." };
   }
 }

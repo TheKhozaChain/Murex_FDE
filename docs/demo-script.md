@@ -1,11 +1,28 @@
-# 7–10 Minute Demo Script
+# Recommended 5–7 Minute HVB-2847 Flagship Demo
 
-1. Introduce fictional HarbourView Bank and the real operational pattern: daily reporting exceptions assembled from fragmented evidence.
-2. Open Workflow & Interviews. Show the nine-stage process and point out stakeholder conflicts.
-3. Open Opportunity Matrix. Contrast deterministic status parsing and reconciliation with bounded AI synthesis and human-only production decisions.
-4. Launch Stale FX Market Data. Explain that this scenario is executable. Run the server workflow, inspect the derived timestamp, AUD 12.8m exposure and successful-batch evidence, then open the cited recommendation.
-5. Show the approval gate and audit record. Emphasise that no action tool can change data or rerun a job.
-6. Explain that the other four scenarios remain portfolio previews; do not present them as persisted engines.
-7. Open Evaluation and run the one executable golden case. Then open Observability to show the persisted run ID, tool spans, retrieval, citation result, policy, and approval state.
-8. Open ROI & Value. Move an assumption and explain simulated, assumed, and projected labels.
-9. Close on the engagement report: this is workflow redesign with controlled AI, not a generic chatbot.
+Open `HVB-2847` in **Investigation workspace**. Every bank name, market-data observation, exposure, actor, job, action, and value assumption is synthetic. There is no production or real Murex connectivity.
+
+1. **Open the incident — 0:00–0:35.** Say: “Daily Market Risk shows an 18.4% APAC FX delta movement. AUD 12.8m of synthetic exposure is affected, and report distribution is held. The batch completed, but in a Murex reporting chain successful processing does not prove the inputs were current.”
+2. **Run the investigation — 0:35–1:05.** Select **Start investigation**. Point to the nine stages: incident, evidence, diagnosis, recommendation, approval, remediation, validation, and audit. Say: “This is an operational state machine, not a chat response.”
+3. **Show deterministic evidence — 1:05–1:45.** Open **Evidence**. Highlight the stale USD/JPY timestamp, freshness boundary, AUD 12.8m affected exposure, 93% movement concentration, successful dependencies, and materiality control. Say: “Code owns these facts. The model cannot alter the timestamp, exposure calculation, or control result.”
+4. **Show bounded diagnosis — 1:45–2:20.** Open **Diagnosis** and **Recommendation**. Point to the 92% probable cause, citations, remaining source-confirmation uncertainty, risk, blast radius, preconditions, validation, and rollback. Say: “The batch is not mislabelled as the cause, and the recommendation does not directly edit protected market data.”
+5. **Explain policy — 2:20–2:55.** Open **Approval**. Say: “Citation validation and policy must pass first. Approval is tied to recommendation version 1 and its evidence snapshot. A missing, rejected, stale-version, low-confidence, disallowed, or duplicate request fails closed and is audited.”
+6. **Approve as the reviewer — 2:55–3:25.** Select **Approve scoped synthetic recovery**. Point to the reviewer identity and time. Say: “Approval does not grant arbitrary execution. It only enables one incident-specific action ID.”
+7. **Show the bounded action — 3:25–4:05.** On **Remediation**, read the label **SIMULATED / SYNTHETIC REMEDIATION**. Show the action: verify Market Data Operations confirmation, refresh the isolated synthetic USD/JPY observation, run only the APAC market-data and risk controls, and gather new evidence. Say: “There is no shell, SQL, external API, generated code, or real Murex write path.” Select **Execute approved synthetic recovery**.
+8. **Show fresh post-action evidence — 4:05–4:50.** On **Validation**, show the stale timestamp becoming current, the scoped rerun succeeding, population remaining complete, refreshed risk reconciliation passing, and the report hold moving to released. Say: “These are new deterministic records persisted after execution—not model-authored success text.”
+9. **Explain resolution — 4:50–5:20.** Point to `RESOLVED` and `determinedBy: deterministic_resolution_policy`. Say: “The model never decides that remediation worked. Every required control must pass. If freshness or reconciliation fails, distribution stays held, the run becomes `requires_escalation`, and the audit records `VALIDATION_FAILED`.”
+10. **Open audit — 5:20–5:55.** Show approval lookup, allow-list/precondition check, execution ID, synthetic executor, post-action evidence, resolution validation, and closure. Say: “Engineering, operations, and risk can reconstruct who proposed, approved, executed, validated, and changed state.”
+11. **Open observability — 5:55–6:30.** Show the trace labels separating deterministic facts, trusted retrieval, bounded AI, the human gate, deterministic action, and resolution. Point to the run/execution linkage.
+12. **Close — 6:30–7:00.** Say: “The model is one bounded component inside an operational workflow. Facts, permissions, actions, validation, and final system state remain deterministic and auditable. The Murex expertise is in knowing what evidence matters and what recovery is safe; the AI engineering is in orchestrating that knowledge without removing control.”
+
+If time is short, compress evidence-card inspection and the value assumptions. Do not skip the approval boundary, the synthetic-action label, fresh post-action evidence, or deterministic resolution.
+
+# 8–12 Minute Deep-Dive Script
+
+1. Introduce fictional HarbourView Bank and the evidence-assembly problem. Show the deterministic/AI/human boundaries.
+2. Launch `HVB-2847`. Run the shared workflow, inspect the stale timestamp and AUD 12.8m exposure, approve the allow-listed FX refresh-and-risk-control simulation, validate the new evidence, and show deterministic `RESOLVED` state plus execution trace.
+3. Launch `HVB-2829`. Show the 4.7% crude move, sensitivity contribution, carry, new trades, near-zero residual, complete population, valid timestamp, passing currency control, and successful batch. Emphasise that materiality triggers Product Control review—not technical repair. Outcome: explain a legitimate business movement.
+4. Launch `HVB-2822`. Contrast the current timeout with historical mapping similarity and show the initial 41% failed-closed result. Request more investigation, inspect the expanded evidence packet, and show the 91% upstream non-delivery diagnosis. Review, approve, execute the scoped synthetic recovery, validate every downstream control, and inspect closure audit events. Outcome: fail closed under uncertainty, then recover only when evidence and human authority permit it.
+5. Reload a completed case and show persisted evidence, decision, and audit events. Open Observability for real tool spans and policy results.
+6. Run the evaluation dashboard. Show seventeen scored fields per case and explain that the five remediation fields are substantive for `HVB-2847` but non-applicable passes for the other golden cases. Point to the 30-case target labelled roadmap.
+7. Close with two preview-only scenarios and the public boundaries: synthetic data, deterministic mock, demo identity, shared D1, and no production connectivity or mutation.

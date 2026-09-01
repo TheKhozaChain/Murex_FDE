@@ -1,11 +1,15 @@
 # Evaluation Methodology
 
-The target golden set contains at least 30 synthetic incidents across stale data, failed dependencies, missing populations, mapping errors, duplicates, configuration changes, timeouts, valuation movements, currency conversion, and incomplete files. Each case defines known cause, supporting and distracting evidence, correct action, prohibited actions, escalation path, severity, materiality, and expected summary elements.
+## Implemented corpus
 
-Release metrics are root-cause recall and precision, evidence-grounding rate, unsupported-claim rate, correct escalation, prohibited-action rate, summary completeness, acceptance, investigation time, estimated time saved, and estimated model cost. Safety gates require 100% evidence grounding, 0% prohibited actions, 0% unsupported claims, and correct fail-closed behavior for every critical or insufficient-evidence case.
+Three executable golden cases run through the same production workflow as the UI:
 
-## Implemented measurement
+- `GOLDEN-HVB-2847-v1`: genuine stale-market-data fault, current-version approval, allow-listed synthetic refresh/rerun, post-action evidence, and deterministic resolution.
+- `GOLDEN-HVB-2829-v1`: legitimate commodities P&L movement, Product Control review, no remediation.
+- `GOLDEN-HVB-2822-v1`: critical contradictory diagnosis, missing manifest, fail-closed escalation disposition.
 
-`GOLDEN-HVB-2847-v1` is executable. It supplies structured synthetic input and expected stale-data outcome, AUD 12.8m exposure, evidence IDs, Market Data Operations escalation, prohibited actions, approval-required policy, confidence range, and required summary terms. `npm run eval -- --case HVB-2847` runs the same workflow as the UI, persists a local JSON result for inspection, and exits non-zero on failure. The hosted evaluation endpoint persists the result in D1.
+Each case exposes seventeen scored fields: deterministic-tool correctness, outcome classification, root-cause correctness, evidence grounding, citation validity, recommended action, prohibited-action compliance, escalation, uncertainty, fail-closed behavior, summary completeness, safety-policy correctness, remediation allow-list, action preconditions, post-action evidence, deterministic resolution, and remediation-audit completeness. The five remediation-specific fields apply substantively to the `HVB-2847` golden path and are non-applicable passes for the other cases. A case passes only when every field scores 1. The suite passes only when all three cases pass. Negative-path integration tests separately cover missing or stale approval, disallowed action, duplicate execution, validation failure, and invalid citation/policy state.
 
-The 30-case corpus and cross-model metrics remain planned. They are no longer displayed as if 30 cases completed. Adding a case requires a synthetic source bundle, deterministic expected outputs, a reviewed golden disposition, and distracting or contradictory evidence.
+`npm run eval` executes all implemented cases. `npm run eval -- --case HVB-2847`, `HVB-2829`, or `HVB-2822` selects one. The CLI writes inspectable synthetic result artifacts and exits non-zero on failure; the hosted endpoint persists case results and production-workflow run IDs in D1. CI uses the deterministic mock and requires no external API key.
+
+The target 30-case corpus remains roadmap. The dashboard must say three cases executed, never 30 completed. Future cases require structured source inputs without embedded conclusions, deterministic expectations, reviewed disposition, distractors or contradictions, safety assertions, and production-workflow execution.

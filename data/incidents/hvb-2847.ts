@@ -1,6 +1,6 @@
-import type { IncidentInput } from "../../src/domain/models";
+import type { Hvb2847Input } from "../../src/domain/models";
 
-export const hvb2847Input: IncidentInput = {
+export const hvb2847Input: Hvb2847Input = {
   id: "HVB-2847",
   title: "Unexpected FX delta movement",
   report: "Daily Market Risk",
@@ -24,6 +24,6 @@ export const hvb2847Input: IncidentInput = {
     dependencyStatuses: { TRADE_LOAD_APAC: "SUCCEEDED", MARKET_DATA_APAC: "SUCCEEDED", VALUATION_APAC: "SUCCEEDED" },
   },
   reconciliation: { controlId: "REC-FX-DELTA-0803", movementPercent: 18.4, concentrationPercent: 93, passedPopulationControl: true },
+  recoverySimulation: { refreshedRate: 147.36, refreshedObservedAt: "2026-08-02T22:42:00.000Z", sourceConfirmationId: "MDOPS-CONF-2847", riskBatchJobId: "RISK_APAC_010-R1", expectedReconciliationStatus: "PASSED", reportDistributionInitiallyHeld: true },
   policies: { freshnessThresholdMinutes: 60, materialityExposureAud: 10_000_000, requiredEvidenceKinds: ["market_data", "exposure", "batch", "reconciliation"] },
 };
-

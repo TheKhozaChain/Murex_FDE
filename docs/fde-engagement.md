@@ -6,6 +6,6 @@ Stakeholders disagree about who sees incidents first, whether manual controls ar
 
 The deployment plan is shadow mode, analyst-assist, controlled pilot by incident class, then expansion only after safety and adoption gates pass. Adoption measures include acceptance/rejection reasons, investigation time, escalation accuracy, knowledge reuse, and backlog movement. The value case applies conservative volume, labour-cost, and realisation assumptions and clearly labels simulated versus projected values.
 
-## Milestone 2 evidence
+## Current reference evidence
 
-The stale-FX scenario is now the first executable thin slice. Server-owned structured inputs flow through deterministic freshness, exposure, dependency, materiality, and completeness checks; local approved guidance is retrieved transparently; a deterministic mock provider produces a cited schema; policy can fail closed; and D1 persists the run, approval and evaluation. This is engineering evidence for one synthetic case, not evidence of bank deployment or general model performance. The remaining scenarios are retained as discovery and product previews until they receive their own golden inputs and tests.
+Three synthetic scenarios now exercise the shared workflow: a genuine stale-FX fault, a legitimate commodities P&L movement and an initially unconfirmed liquidity shortfall. Server-owned inputs flow through scenario-specific deterministic checks; approved fictional guidance is retrieved transparently; a deterministic mock provider produces a cited schema; policy can fail closed; and D1 persists runs, decisions, actions and evaluations. This is engineering evidence for a controlled reference pattern, not evidence of bank deployment, live-model performance or production readiness.

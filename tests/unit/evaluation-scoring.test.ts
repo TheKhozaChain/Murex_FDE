@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { runGoldenEvaluation } from "../../src/evaluation/runner";
+import { runGoldenEvaluation, runGoldenSuite } from "../../src/evaluation/runner";
 import { MemoryInvestigationRepository } from "../../src/persistence/memory-repository";
 
 test("the executable HVB-2847 golden case passes every measured check", async () => {
@@ -11,3 +11,9 @@ test("the executable HVB-2847 golden case passes every measured check", async ()
   assert.equal(result.measured, true);
 });
 
+test("all three executable golden cases pass all seventeen measured checks", async () => {
+  const results = await runGoldenSuite({ repository: new MemoryInvestigationRepository() });
+  assert.equal(results.length, 3);
+  assert.deepEqual(results.map(result => result.incidentId), ["HVB-2847", "HVB-2829", "HVB-2822"]);
+  assert.ok(results.every(result => result.passed && Object.keys(result.scores).length === 17 && Object.values(result.scores).every(score => score === 1)));
+});

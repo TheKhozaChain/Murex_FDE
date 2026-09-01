@@ -1,11 +1,11 @@
 # Interview Talking Points
 
-- **Forward Deployed Engineering:** begins with stakeholder discovery and process truth, then ships a controlled vertical slice and measures adoption/value.
-- **Capital-markets domain:** models daily trade, market-data, valuation, reporting, reconciliation, distribution, and support handoffs without claiming proprietary authenticity.
-- **Enterprise AI:** separates deterministic facts from probabilistic synthesis and makes every claim inspectable.
-- **Workflow analysis:** records conflicts, bottlenecks, materiality, ownership, and incentives—not only technical symptoms.
-- **Human in the loop:** analysts own confirmation, escalation, reruns, resolution, severity, and publication.
-- **Evaluation:** one golden case now executes the production workflow and measures ten case-level checks; the 30-case suite is honestly roadmap.
-- **Governance:** tested trust ranking, runtime schemas, citation/fact validation, immutable audit access, protected-record rules, explicit approval, and fail-closed states.
-- **Engineering progression:** the first release was intentionally a client simulation; Milestone 2 demonstrates extracting one narrow scenario into typed, persisted server-side layers before scaling breadth.
-- **Business value:** conservative assumptions, explicit realisation factor, confidence range, and no claim that released capacity automatically becomes cash savings.
+- **Generalisation:** one explicit orchestrator now handles three typed scenario adapters while sharing synthesis, validation, policy, persistence, approval, audit, trace, and evaluation layers.
+- **Three FDE outcomes:** diagnose a genuine operational fault; explain a legitimate business movement without inventing an error; fail closed when a critical case lacks decisive evidence.
+- **Deterministic-first design:** P&L math, freshness, populations, manifests, deadlines, contradictions, and control state are code—not model opinion.
+- **Historical evidence discipline:** similar incidents can suggest hypotheses but never satisfy current-proof requirements.
+- **Human accountability:** ordinary recommendations require review; failed-closed cases permit only escalation-disposition approval, never confirmed resolution.
+- **Evaluation:** three golden cases execute the shared workflow and expose seventeen scored fields. Five remediation fields apply substantively to `HVB-2847` and are non-applicable passes for the other cases. The 30-case suite remains explicitly planned.
+- **Security:** injected retrieval content, fabricated citations, unnecessary repair, unsafe rerun, false timeout/mapping certainty, wrong approval scope, and audit integrity are tested.
+- **Architecture progression:** Milestone 2 proved one executable vertical slice. Milestone 3 tests architecture generalisation across fault, legitimate outcome, and uncertainty without adding a bespoke workflow per incident.
+- **Honest boundaries:** deterministic mock, synthetic data, shared public D1, demo identity, no real bank or proprietary Murex material, and no production mutation path.

@@ -1,68 +1,84 @@
 # Murex FDE Workbench — Implementation Plan
 
-## Current architecture and honest boundary
+## Current architecture and milestone boundary
 
-The first release is a polished client-side simulation. Five scenarios, their evidence, conclusions, recommendation copy, confidence, and guardrails are static. React state currently simulates execution, approvals, audit events, traces, and evaluation. The D1 schema is empty and the existing smoke tests primarily verify rendering and portfolio wording.
+`HVB-2847` is an executable, persisted vertical slice with server-side orchestration, deterministic evidence, retrieval, provider-neutral synthesis, validation, fail-closed policy, D1 persistence, approvals, audits, traces, and one golden evaluation. `HVB-2829` and `HVB-2822` are promoted from previews in this milestone; `HVB-2841` and `HVB-2836` remain previews.
 
-Milestone 2 converts only `HVB-2847` into a real executable vertical slice while preserving the existing product narrative and four remaining scenario previews.
+Milestone 3 generalises the same architecture for `HVB-2829` and `HVB-2822`. It must demonstrate three materially different outcomes without redesigning the application or implying that the planned 30-case corpus exists:
 
-## Target architecture
+1. diagnose a genuine operational fault (`HVB-2847`);
+2. explain a legitimate business movement with no remediation (`HVB-2829`);
+3. fail closed under critical uncertainty (`HVB-2822`).
 
-1. **UI (`app/`)** — retains the current role-aware workbench and calls server routes for executable investigation, approval, traces, and evaluation.
-2. **Domain (`src/domain/`)** — Zod-validated types for incidents, structured inputs, evidence, tool executions, recommendation, policy, approval, audit, and evaluation.
-3. **Deterministic tools (`src/deterministic/`)** — freshness, exposure, dependency, severity/materiality, and completeness checks.
-4. **Retrieval (`src/retrieval/`)** — transparent weighted-token ranking over local, versioned synthetic documents; retrieved text is never instruction.
-5. **Synthesis (`src/providers/`)** — provider-neutral interface with a deterministic mock implementation.
-6. **Validation and policy (`src/investigation/`, `src/policy/`)** — citation, fact-consistency, prohibited-action, confidence, approval, and fail-closed rules.
-7. **Persistence (`src/persistence/`, `db/`)** — repository interface, D1 implementation for hosted state, and in-memory implementation for deterministic tests.
-8. **Evaluation (`src/evaluation/`)** — one executable golden case that runs through the same workflow and persists measured scores.
+## Shared target architecture
 
-## D1 schema
+1. **Scenario registry (`data/`, `src/investigation/`)** — maps a supported incident to Zod-validated input and scenario-specific deterministic tools. It contains data and execution adapters, not final recommendations.
+2. **UI (`app/`)** — retains the current workbench and calls the same investigation, approval, trace, and evaluation routes for all three executable scenarios.
+3. **Domain (`src/domain/`)** — discriminated typed inputs for market-data, P&L-explain, and critical-report incidents plus shared evidence, recommendation, policy, approval, audit, and evaluation types.
+4. **Deterministic tools (`src/deterministic/`)** — shared typed tool-result contract with scenario-specific calculations behind one dispatcher.
+5. **Retrieval (`src/retrieval/`)** — scenario-aware transparent ranking over versioned synthetic guidance; malicious and historical content remains untrusted context and never direct proof.
+6. **Synthesis (`src/providers/`)** — one provider interface and one deterministic context-driven mock implementation for all supported scenarios.
+7. **Validation and policy (`src/investigation/`, `src/policy/`)** — shared citation/fact validation, no-unnecessary-remediation rules, critical ambiguity rules, and disposition-aware approval transitions.
+8. **Persistence (`src/persistence/`, `db/`)** — unchanged repository contract and D1 schema unless implementation proves a normalized field is missing; run snapshots already preserve scenario-specific typed data.
+9. **Evaluation (`src/evaluation/`)** — three golden cases run through the production workflow with twelve measured dimensions and persisted results.
 
-`incidents`, `investigation_runs`, `tool_executions`, `evidence_records`, `retrieved_documents`, `recommendations`, `policy_decisions`, `approval_decisions`, `audit_events`, `evaluation_cases`, and `evaluation_results`. Structured snapshots use JSON text; indexes support incident/run, audit/run, and evaluation/case lookup. A unique approval index prevents duplicate decisions.
+## Structured input design
 
-## Server-side investigation workflow
+The shared server-side investigation workflow remains validate, gather deterministic evidence, retrieve, synthesise, validate, apply policy, persist, request a human disposition, and append audit events.
 
-1. Accept only a validated incident ID.
-2. Create and persist a running investigation.
-3. Execute typed deterministic tools over the server-owned synthetic input.
-4. Persist tool outputs and derived evidence.
-5. Retrieve and persist attributable guidance.
-6. Synthesise a strict recommendation through the configured provider interface.
-7. Validate schema, evidence IDs, executed-tool references, and fact consistency.
-8. Apply deterministic safety policy and fail closed when necessary.
-9. Persist recommendation, policy decision, audit events, and completed state.
-10. Return a redacted safe view to the browser.
+### `HVB-2829` — legitimate commodities P&L movement
 
-## Testing approach
+Prior/current crude prices, reported P&L, desk sensitivity, carry and new-trade contributions, expected/actual trade counts, valuation timestamps, FX conversion controls, report threshold/materiality, batch/dependency state, residual tolerance, and freshness boundary. Deterministic tools derive the market move, explained P&L, residual, control status, and evidence completeness.
 
-- Unit: payload, freshness, exposure, dependency, materiality, evidence completeness, citations, policy, approval transitions, and evaluation scoring.
-- Integration: complete workflow, reload from repository, approval/rejection, duplicate approval, and persisted evaluation.
-- Security: malicious retrieved instructions, fabricated citation, direct market-data mutation, malformed output, early approval, and immutable audit behavior.
-- UI: retain rendered-worker smoke tests.
-- CI: install, lint, type-check, full test suite, build, and executable mock evaluation without API keys.
+### `HVB-2822` — conflicting critical timeout diagnosis
+
+Criticality, regulatory deadline and sign-off window, batch state, current source-reader timeout, expected/received source segments, manifest presence, mapping validation status, historical incidents, required evidence, escalation routes, and minimum confidence. Deterministic tools derive deadline risk, incomplete population, missing evidence, competing hypotheses, and fail-closed disposition. Historical similarity is explicitly classified as context rather than current proof.
+
+## Policy changes
+
+- Reject repair, rerun, or technical-escalation recommendations when P&L is fully explained and every deterministic control passes.
+- Require Product Control review and human approval before publishing stakeholder commentary for a legitimate material movement.
+- Fail closed for a Critical report when required evidence is missing, current hypotheses compete, population is unknown, or confidence is below threshold.
+- For a failed-closed critical case, permit approval only of the escalation disposition; prohibit approval as a confirmed resolution.
+- Continue rejecting unknown citations, unsupported mutations, deterministic contradictions, historical-as-proof claims, and malformed output.
+
+## Evaluation expectations
+
+The default evaluation command executes `GOLDEN-HVB-2847-v1`, `GOLDEN-HVB-2829-v1`, and `GOLDEN-HVB-2822-v1`; case selection remains available by incident ID. Each case measures deterministic correctness, outcome classification, root-cause correctness, grounding, citations, action, prohibited-action compliance, escalation, uncertainty, fail-closed behavior, summary completeness, and overall pass/fail.
+
+## Database expectation
+
+No destructive migration is planned. Existing incident, run, tool, evidence, retrieval, recommendation, policy, approval, audit, evaluation-case, and evaluation-result tables are scenario-neutral. New incident and evaluation rows will be seeded through the existing repository interface. Any schema change must be additive, migrated, and justified by an actual query or integrity requirement.
+
+## Files expected to change
+
+- `data/incidents/`, `data/evaluation/`, `data/runbooks/`, `data/scenarios.ts`
+- `src/domain/`, `src/deterministic/`, `src/investigation/`, `src/providers/`, `src/retrieval/`, `src/policy/`, `src/evaluation/`
+- persistence implementations only where generalized incident/evaluation typing requires it
+- investigation, approval, evaluation APIs and executable UI components
+- unit, integration, security, rendered-site tests and CI
+- `README.md`, `PLAN.md`, `CHANGELOG.md`, and the requested `docs/` material
 
 ## Milestone checklist
 
-- [x] Preserve the five-scenario enterprise UI and IP boundaries.
-- [x] Record the client-simulation starting point honestly.
-- [x] Extract typed domain models and synthetic structured input.
-- [x] Implement and test all six deterministic checks for `HVB-2847`.
-- [x] Implement transparent local retrieval with malicious-document handling.
-- [x] Implement provider interface and deterministic mock synthesis.
-- [x] Implement citation validation and deterministic policy engine.
-- [x] Add D1 schema, migration, repository, seed/reset support, and API routes.
-- [x] Connect investigation, approval, audit, trace, and evaluation UI to persisted state.
-- [x] Add and run the executable golden evaluation.
-- [x] Add adversarial tests and update CI/documentation.
-- [x] Publish the validated milestone.
+- [x] Generalise the domain and workflow through a shared scenario registry.
+- [x] Add structured synthetic inputs for `HVB-2829` and `HVB-2822` without embedded conclusions.
+- [x] Implement and test eight deterministic checks for each new scenario.
+- [x] Extend retrieval while keeping malicious instructions inert and history contextual.
+- [x] Extend one context-driven mock provider to all three scenarios.
+- [x] Add scenario-specific fact, citation, policy, and approval protections.
+- [x] Persist, reload, trace, approve/reject, and audit both new scenarios.
+- [x] Make three scenarios executable in the existing UI and retain two labelled previews.
+- [x] Expand the golden evaluation corpus and dashboard to three measured cases.
+- [x] Retain existing tests and add requested unit, integration, security, and UI coverage.
+- [x] Update CI and documentation without overstating the 30-case roadmap.
+- [x] Push and publish the fully verified milestone.
 
-## Assumptions and risks
+## Risks and assumptions
 
-- Hosted persistence is D1; tests use an in-memory adapter behind the identical repository contract.
-- Demo identity is `demo.support.analyst` and is not authentication.
-- Only `HVB-2847` is measured/executable now; all other scenarios and 30-case visualisations remain labelled previews.
-- The mock provider is deterministic and free; external providers remain planned.
-- No production read/write integration, bank deployment, or proprietary Murex artefact exists.
-- D1 schema initialization is idempotent for the public demo; formal migration files remain the deployment record.
-- The public demo is shared state. A production design would require authenticated tenant/user isolation and regulated retention controls.
+- Scenario selection must choose input and tool adapters, never a prewritten final answer keyed only by incident ID.
+- Historical documents may rank highly but cannot satisfy direct-current-evidence requirements.
+- Approval semantics must distinguish accepting an escalation disposition from confirming a root cause or resolution.
+- Synthetic values will be transparent, arithmetically reproducible, and free of proprietary Murex or bank information.
+- Hosted persistence remains shared D1 demo state; production authentication, tenant isolation, external providers, integrations, and the 30-case corpus remain planned.
+- `demo.support.analyst` remains a clearly labelled demo identity, not authentication.

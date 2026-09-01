@@ -15,6 +15,6 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      - run: npm run eval -- --case HVB-2847
+      - run: npm run eval
         env:
           AI_PROVIDER: mock

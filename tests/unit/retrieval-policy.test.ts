@@ -21,9 +21,8 @@ test("policy fails closed on invalid citations", () => {
 });
 
 test("state transition rules prevent early and duplicate approval", () => {
-  const policy = { investigationId: "run-1", result: "approval_required" as const, passed: true, rules: [], prohibitedActions: [], approvalRequired: true, operationalEffect: "none" as const, decidedAt: "2026-08-04T00:00:00.000Z" };
+  const policy = { investigationId: "run-1", result: "approval_required" as const, passed: true, rules: [], prohibitedActions: [], approvalRequired: true, permittedApprovalScope: "recommendation" as const, operationalEffect: "none" as const, decidedAt: "2026-08-04T00:00:00.000Z" };
   assert.equal(canApprove(policy, "running", false).allowed, false);
   assert.equal(canApprove(policy, "completed", true).allowed, false);
   assert.equal(canApprove(policy, "completed", false).allowed, true);
 });
-
